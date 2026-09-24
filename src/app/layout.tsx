@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hello World",
-  description: "Simple Hello World Next.js app",
+  title: "Meme Club",
+  description: "Image gallery.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="en" id="top" className="h-full antialiased">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
