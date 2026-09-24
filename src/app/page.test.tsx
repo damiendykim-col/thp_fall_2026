@@ -18,16 +18,16 @@ describe("Image gallery", () => {
   it("switches between cards, list, and table while preserving sort order", () => {
     render(<Gallery images={images} />);
     fireEvent.change(screen.getByRole("combobox"), { target: { value: "oldest" } });
-    fireEvent.click(screen.getByRole("button", { name: "List", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "List" }));
     expect(screen.getByText("Untitled image")).toBeInTheDocument();
     expect(screen.getAllByRole("img")[0]).toHaveAttribute("src", images[0].image_url);
-    fireEvent.click(screen.getByRole("button", { name: "Table", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Table" }));
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getAllByRole("row")).toHaveLength(3);
     expect(screen.getAllByRole("img")[0]).toHaveAttribute("src", images[0].image_url);
-    fireEvent.click(screen.getByRole("button", { name: "Cards", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: "Cards" }));
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Cards", exact: true })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Cards" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("shows an empty state", () => {
