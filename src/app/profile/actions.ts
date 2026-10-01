@@ -15,6 +15,7 @@ export async function saveProfile(_previous: ProfileResult, form: FormData): Pro
   const favoriteJoke = form.get("favorite_joke");
   const invalidJoke = validateFavoriteJoke(favoriteJoke);
   if (invalidJoke) return { error: invalidJoke };
+  const favoriteJokeText = typeof favoriteJoke === "string" ? favoriteJoke.trim() : "";
   const photo = form.get("photo");
   const file = photo instanceof File && photo.size > 0 ? photo : null;
   if (file && (file.size > MAX_AVATAR_BYTES || !AVATAR_TYPES[file.type])) {
@@ -32,7 +33,7 @@ export async function saveProfile(_previous: ProfileResult, form: FormData): Pro
   const { data: saved, error } = await supabase.from("profiles").update({
     first_name: (first as string).trim(),
     last_name: (last as string).trim(),
-    favorite_joke: (favoriteJoke as string).trim() || null,
+    favorite_joke: favoriteJokeText || null,
     ...(newPath ? { avatar_path: newPath } : {}),
   }).eq("id", user.id).select("id").single();
   if (error || !saved) {
