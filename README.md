@@ -21,7 +21,7 @@ The `public.images` table has four columns:
 
 The project uses RLS with a SELECT policy for `anon` and `authenticated`, plus SELECT table privileges for those roles. Add records in the Supabase dashboard. Image files belong in a public Storage bucket; use `/storage/v1/object/public/...` URLs rather than dashboard previews or expiring signed links.
 
-The server queries Supabase on each page request, so newly added records appear on refresh without redeployment. Fetching uses the publishable key and respects RLS. Login, uploads, and voting are outside this version's scope.
+The server queries Supabase on each page request, so newly added records appear on refresh without redeployment. Fetching uses the publishable key and respects RLS. Google sign-in, private profiles, and profile photo uploads are supported. Voting and gallery uploads are outside this version's scope.
 
 ## Checks
 
@@ -32,3 +32,7 @@ The server queries Supabase on each page request, so newly added records appear 
 ## Vercel
 
 Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in the Vercel project's environment variables for the environments you deploy to. Commit and push the code to the connected GitHub repository, then deploy/redeploy. Verify `/images` on the deployment displays the records and opens images correctly.
+
+## Assignment 3
+
+See [the setup guide](docs/assignment-3-setup.md) for the SQL migration, Google OAuth client configuration, exact callback URLs, and end-to-end verification. `/profile` requires sign-in; `/members` also requires both profile names. The gallery remains public.
