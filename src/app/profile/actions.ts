@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
-import { AVATAR_TYPES, MAX_AVATAR_BYTES, validateNames } from "@/lib/profile";
+import { AVATAR_TYPES, MAX_AVATAR_BYTES, validateFavoriteJoke, validateNames } from "@/lib/profile";
 
 export type ProfileResult = { error?: string; success?: boolean };
 
@@ -12,6 +12,10 @@ export async function saveProfile(_previous: ProfileResult, form: FormData): Pro
   const last = form.get("last_name");
   const invalid = validateNames(first, last);
   if (invalid) return { error: invalid };
+  const favoriteJoke = form.get("favorite_joke");
+  const invalidJoke = validateFavoriteJoke(favoriteJoke);
+  if (invalidJoke) return { error: invalidJoke };
+  const favoriteJokeText = typeof favoriteJoke === "string" ? favoriteJoke.trim() : "";
   const photo = form.get("photo");
   const file = photo instanceof File && photo.size > 0 ? photo : null;
   if (file && (file.size > MAX_AVATAR_BYTES || !AVATAR_TYPES[file.type])) {
@@ -29,6 +33,7 @@ export async function saveProfile(_previous: ProfileResult, form: FormData): Pro
   const { data: saved, error } = await supabase.from("profiles").update({
     first_name: (first as string).trim(),
     last_name: (last as string).trim(),
+    favorite_joke: favoriteJokeText || null,
     ...(newPath ? { avatar_path: newPath } : {}),
   }).eq("id", user.id).select("id").single();
   if (error || !saved) {
@@ -36,7 +41,10 @@ export async function saveProfile(_previous: ProfileResult, form: FormData): Pro
     return { error: "Your profile couldn’t be saved. Please try again." };
   }
   if (newPath && current.avatar_path && current.avatar_path.startsWith(`${user.id}/`)) {
-    await supabase.storage.from("avatars").remove([current.avatar_path]);
+    await supabase.from("profile_avatar_history").insert({
+      profile_id: user.id,
+      avatar_path: current.avatar_path,
+    });
   }
   revalidatePath("/profile");
   revalidatePath("/members");

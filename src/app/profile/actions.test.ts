@@ -10,6 +10,7 @@ const update = jest.fn();
 const eq = jest.fn();
 const upload = jest.fn();
 const remove = jest.fn();
+const insert = jest.fn();
 const from = jest.fn();
 
 beforeEach(() => {
@@ -17,7 +18,12 @@ beforeEach(() => {
   read.mockResolvedValue({ data: { avatar_path: null }, error: null });
   eq.mockReturnValue({ select: () => ({ single: async () => ({ data: { id: "owner" }, error: null }) }) });
   update.mockReturnValue({ eq });
-  from.mockReturnValue({ select: () => ({ eq: () => ({ single: read }) }), update });
+  insert.mockResolvedValue({ error: null });
+  from.mockImplementation((table: string) => {
+    if (table === "profiles") return { select: () => ({ eq: () => ({ single: read }) }), update };
+    if (table === "profile_avatar_history") return { insert };
+    return null;
+  });
   upload.mockResolvedValue({ error: null });
   remove.mockResolvedValue({ error: null });
   requireAuth.mockResolvedValue({
@@ -39,7 +45,7 @@ it("never uses a submitted user ID to choose the profile", async () => {
   const data = form(); data.set("id", "someone-else");
   await expect(saveProfile({}, data)).resolves.toEqual({ success: true });
   expect(eq).toHaveBeenCalledWith("id", "owner");
-  expect(update).toHaveBeenCalledWith({ first_name: "Ada", last_name: "Lovelace" });
+  expect(update).toHaveBeenCalledWith({ first_name: "Ada", last_name: "Lovelace", favorite_joke: null });
 });
 it("rejects blank names before writing", async () => {
   const data = form(); data.set("last_name", " ");
@@ -54,12 +60,13 @@ it.each([
   expect(await saveProfile({}, data)).toHaveProperty("error");
   expect(upload).not.toHaveBeenCalled();
 });
-it("uploads to the owner's folder and deletes the old photo after saving", async () => {
+it("uploads to the owner's folder and records the old photo as history", async () => {
   read.mockResolvedValue({ data: { avatar_path: "owner/old.png" }, error: null });
   const data = form(); data.set("photo", new File(["test"], "photo.png", { type: "image/png" }));
   expect(await saveProfile({}, data)).toEqual({ success: true });
   expect(upload.mock.calls[0][0]).toMatch(/^owner\/.*\.png$/);
-  expect(remove).toHaveBeenCalledWith(["owner/old.png"]);
+  expect(insert).toHaveBeenCalledWith({ profile_id: "owner", avatar_path: "owner/old.png" });
+  expect(remove).not.toHaveBeenCalledWith(["owner/old.png"]);
 });
 it("cleans up a new photo if the profile update fails", async () => {
   eq.mockReturnValue({ select: () => ({ single: async () => ({ data: null, error: new Error("failed") }) }) });
@@ -74,4 +81,22 @@ it("preserves GIF uploads with the correct extension and content type", async ()
   data.set("photo", gif);
   expect(await saveProfile({}, data)).toEqual({ success: true });
   expect(upload).toHaveBeenCalledWith(expect.stringMatching(/^owner\/.*\.gif$/), expect.any(File), { contentType: "image/gif", upsert: false });
+});
+
+it("saves favorite_joke when provided", async () => {
+  const data = form();
+  data.set("favorite_joke", "  A SQL query walks into a bar...  ");
+  expect(await saveProfile({}, data)).toEqual({ success: true });
+  expect(update).toHaveBeenCalledWith({
+    first_name: "Ada",
+    last_name: "Lovelace",
+    favorite_joke: "A SQL query walks into a bar...",
+  });
+});
+
+it("rejects non-text favorite_joke values", async () => {
+  const data = form();
+  data.set("favorite_joke", new File(["haha"], "joke.txt", { type: "text/plain" }));
+  expect(await saveProfile({}, data)).toHaveProperty("error");
+  expect(update).not.toHaveBeenCalled();
 });

@@ -93,8 +93,9 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .account-page > p { margin-bottom: 24px; }
 .profile-form { max-width: 420px; display: flex; flex-direction: column; gap: 20px; }
 .profile-form label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
-.profile-form input { width: 100%; background: #111; color: var(--foreground); border: 1px solid #383838; border-radius: 4px; padding: 11px; font: inherit; }
+.profile-form input, .profile-form textarea { width: 100%; background: #111; color: var(--foreground); border: 1px solid #383838; border-radius: 4px; padding: 11px; font: inherit; }
 .profile-form input::file-selector-button { background: #252525; color: #eee; border: 0; padding: 6px 10px; margin-right: 10px; cursor: pointer; }
+.profile-form textarea { min-height: 100px; resize: vertical; }
 .profile-form .button { align-self: flex-start; }
 .profile-form p { font-size: 13px; line-height: 1.6; }
 .field-help { color: var(--muted); margin-top: -12px; }
@@ -102,4 +103,12 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .confirmation-link:hover { text-decoration-thickness: 2px; }
 .profile-photo img { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; }
 .completion-notice { border-left: 2px solid #888; padding-left: 14px; font-size: 14px; line-height: 1.6; }
+.avatar-history h2 { margin-bottom: 10px; font-size: 16px; }
+.avatar-history-list { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.avatar-history-list img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); }
+.member-list { list-style: none; padding: 0; margin: 0 0 24px; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.member-card { border: 1px solid var(--border); border-radius: 8px; padding: 12px; background: #0d0d0d; display: flex; gap: 12px; align-items: flex-start; }
+.member-card p { margin: 0; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.member-avatar { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; border: 1px solid var(--border); display: grid; place-items: center; background: #111; flex-shrink: 0; }
+.member-avatar img { width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 600px) { .site-header { gap: 20px; flex-wrap: wrap; } .account-nav { gap: 14px; } }
