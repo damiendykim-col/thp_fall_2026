@@ -75,3 +75,28 @@ References:
 - https://supabase.com/docs/guides/auth/social-login/auth-google
 - https://supabase.com/docs/guides/auth/server-side/creating-a-client
 - https://supabase.com/docs/guides/auth/managing-user-data
+
+## Member avatar access fix
+
+Apply `supabase/migrations/202610010005_member_avatar_access.sql` after migration
+004. This replaces the current-avatar policy's direct query of `profiles`
+(which was filtered by owner-only RLS) with the restricted member-directory
+function. It also replaces the dashboard policy named
+`Authenticated users can view avatars`, whose operation filter did not allow
+URL signing and whose download rule exposed all avatar history to members.
+
+Keep the avatars bucket private and the `Read own avatar` policy in place.
+Do not add a bucket-wide authenticated SELECT policy: members should see only
+current directory photos, while owners can still access all of their own photos.
+Signed URLs already issued remain usable until their expiry (currently one hour).
+
+Verify with two signed-in accounts after applying the migration:
+- Each account can see the other's current photo on `/members` after refresh.
+- Each can still view its own previous photos on `/profile`.
+- Signing/downloading the other account's historical photo path is denied.
+- Anonymous requests cannot sign or directly download private avatars.
+- Names and email addresses remain inaccessible through the member directory.
+
+The favorite-joke helper text now discloses member visibility and possible use
+for personalized joke suggestions and generation. This is a disclosure only;
+no new recommendation, generation, or data-sharing pipeline is implemented.

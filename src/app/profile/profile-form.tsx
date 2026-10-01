@@ -26,7 +26,7 @@ export default function ProfileForm({
     <label>First name<input name="first_name" autoComplete="given-name" defaultValue={profile.first_name ?? ""} maxLength={80} required /></label>
     <label>Last name<input name="last_name" autoComplete="family-name" defaultValue={profile.last_name ?? ""} maxLength={80} required /></label>
     <label>Favorite joke<textarea name="favorite_joke" defaultValue={profile.favorite_joke ?? ""} maxLength={MAX_FAVORITE_JOKE_CHARS} aria-describedby="favorite-joke-help" /></label>
-    <p className="field-help" id="favorite-joke-help">Optional. Up to {MAX_FAVORITE_JOKE_CHARS} characters.</p>
+    <p className="field-help" id="favorite-joke-help">Optional. Up to {MAX_FAVORITE_JOKE_CHARS} characters. Your joke is visible to other members. We may use it to improve personalized joke suggestions and generation.</p>
     <label>Profile photo<input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-describedby="photo-help" onChange={(event) => {
       const file = event.currentTarget.files?.[0];
       event.currentTarget.setCustomValidity(file && (file.size > MAX_AVATAR_BYTES || !AVATAR_TYPES[file.type])
