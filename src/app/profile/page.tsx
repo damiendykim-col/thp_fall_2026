@@ -29,7 +29,7 @@ export default async function ProfilePage() {
     <p className="account-intro">{user.email}</p>
     {error || !profile ? <div role="alert"><p>Your profile couldn’t be loaded. Please try again.</p><a className="button" href="/profile">Reload profile</a></div> : <>
       {!isProfileComplete(profile) && <p className="completion-notice">Complete your profile by adding your first and last name.</p>}
-      <ProfileForm profile={profile} avatarUrl={avatarUrl} previousPhotos={previousPhotos} />
+      <ProfileForm key={profile.id} profile={profile} avatarUrl={avatarUrl} previousPhotos={previousPhotos} />
     </>}
   </main></>;
 }

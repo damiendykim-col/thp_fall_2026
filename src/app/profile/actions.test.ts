@@ -12,6 +12,8 @@ const upload = jest.fn();
 const remove = jest.fn();
 const insert = jest.fn();
 const from = jest.fn();
+const historyRead = jest.fn();
+const historyEq = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -19,9 +21,11 @@ beforeEach(() => {
   eq.mockReturnValue({ select: () => ({ single: async () => ({ data: { id: "owner" }, error: null }) }) });
   update.mockReturnValue({ eq });
   insert.mockResolvedValue({ error: null });
+  historyRead.mockResolvedValue({ data: { avatar_path: "owner/old.png" }, error: null });
+  historyEq.mockReturnValue({ eq: historyEq, maybeSingle: historyRead });
   from.mockImplementation((table: string) => {
     if (table === "profiles") return { select: () => ({ eq: () => ({ single: read }) }), update };
-    if (table === "profile_avatar_history") return { insert };
+    if (table === "profile_avatar_history") return { insert, select: () => ({ eq: historyEq }) };
     return null;
   });
   upload.mockResolvedValue({ error: null });
@@ -97,6 +101,36 @@ it("saves favorite_joke when provided", async () => {
 it("rejects non-text favorite_joke values", async () => {
   const data = form();
   data.set("favorite_joke", new File(["haha"], "joke.txt", { type: "text/plain" }));
+  expect(await saveProfile({}, data)).toHaveProperty("error");
+  expect(update).not.toHaveBeenCalled();
+});
+
+it("restores an owned history photo without re-uploading or deleting files", async () => {
+  read.mockResolvedValue({ data: { avatar_path: "owner/current.png" }, error: null });
+  insert.mockResolvedValue({ error: { code: "23505" } });
+  const data = form(); data.set("previous_avatar", "owner/old.png");
+  expect(await saveProfile({}, data)).toEqual({ success: true });
+  expect(historyEq).toHaveBeenCalledWith("profile_id", "owner");
+  expect(historyEq).toHaveBeenCalledWith("avatar_path", "owner/old.png");
+  expect(update).toHaveBeenCalledWith(expect.objectContaining({ avatar_path: "owner/old.png" }));
+  expect(upload).not.toHaveBeenCalled(); expect(remove).not.toHaveBeenCalled();
+});
+it.each(["other/private.png", "owner/not-in-history.png"])("rejects an unauthorized selection %s", async path => {
+  historyRead.mockResolvedValue({ data: null, error: null });
+  const data = form(); data.set("previous_avatar", path);
+  expect(await saveProfile({}, data)).toHaveProperty("error");
+  expect(update).not.toHaveBeenCalled(); expect(upload).not.toHaveBeenCalled();
+});
+it("does not change the current photo if history cannot be retained", async () => {
+  read.mockResolvedValue({ data: { avatar_path: "owner/current.png" }, error: null });
+  insert.mockResolvedValue({ error: { code: "42501" } });
+  const data = form(); data.set("previous_avatar", "owner/old.png");
+  expect(await saveProfile({}, data)).toHaveProperty("error");
+  expect(update).not.toHaveBeenCalled(); expect(remove).not.toHaveBeenCalled();
+});
+it("rejects conflicting upload and history selections", async () => {
+  const data = form(); data.set("previous_avatar", "owner/old.png");
+  data.set("photo", new File(["GIF"], "photo.gif", { type: "image/gif" }));
   expect(await saveProfile({}, data)).toHaveProperty("error");
   expect(update).not.toHaveBeenCalled();
 });

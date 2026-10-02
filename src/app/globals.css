@@ -112,3 +112,17 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .member-avatar { width: 72px; height: 72px; border-radius: 50%; overflow: hidden; border: 1px solid var(--border); display: grid; place-items: center; background: #111; flex-shrink: 0; }
 .member-avatar img { width: 100%; height: 100%; object-fit: cover; }
 @media (max-width: 600px) { .site-header { gap: 20px; flex-wrap: wrap; } .account-nav { gap: 14px; } }
+
+.profile-fields { border: 0; padding: 0; margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.photo-picker { align-self: flex-start; border: 0; padding: 0; background: transparent; display: flex; align-items: center; gap: 16px; font-size: 13px; }
+.photo-picker img, .photo-empty { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; border: 2px solid #444; }
+.photo-empty { display: grid; place-items: center; }
+.photo-picker:hover img, .photo-picker:hover .photo-empty, .photo-changed img { border-color: #fff; }
+.photo-changed img { outline: 2px solid #fff; outline-offset: 3px; }
+.history-choice { display: block; position: relative; border: 2px solid transparent; border-radius: 50%; background: transparent; padding: 3px; }
+.history-choice[aria-pressed="true"] { border-color: #fff; }
+.history-choice img { display: block; }
+.photo-check { position: absolute; right: 0; bottom: 0; border-radius: 50%; background: #fff; color: #000; width: 20px; height: 20px; }
+.profile-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.profile-actions .save-changed { background: #eee; color: #111; border-color: #fff; }
+.photo-picker:focus-visible, .history-choice:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
