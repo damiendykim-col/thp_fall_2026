@@ -3,6 +3,7 @@ type Operation =
   | "proxy.auth" | "page.auth" | "header.auth" | "login.auth"
   | "profile.completion" | "profile.read" | "profile.history"
   | "profile.avatar" | "profile.history-avatar"
+  | "profile.avatars" | "members.avatars"
   | "members.list" | "members.avatar" | "images.list";
 
 export async function measureOperation<T>(name: Operation, operation: () => PromiseLike<T>): Promise<T> {

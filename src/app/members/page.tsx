@@ -1,4 +1,5 @@
 import { measureOperation } from "@/lib/performance";
+import { signAvatars } from "@/lib/avatars";
 import Link from "next/link";
 import SiteHeader from "@/components/site-header";
 import { requireCompleteProfile } from "@/lib/auth";
@@ -11,18 +12,11 @@ export default async function MembersPage() {
     data: MemberProfile[] | null;
     error: { message: string } | null;
   };
-  const membersWithPhotos = !members ? [] : await Promise.all(members.map(async (member) => {
-    let avatarUrl: string | null = null;
-    if (member.avatar_path) {
-      const { data, error: photoError } = await measureOperation("members.avatar", () => supabase.storage.from("avatars")
-        .createSignedUrl(member.avatar_path!, 3600));
-      avatarUrl = data?.signedUrl ?? null;
-      if (photoError || !avatarUrl) {
-        // Do not log signed URLs or private object paths.
-        console.error("Member avatar signing failed", { message: photoError?.message ?? "No signed URL returned" });
-      }
-    }
-    return { id: member.id, favoriteJoke: member.favorite_joke, avatarUrl, hasPhoto: Boolean(member.avatar_path) };
+  const signed = await signAvatars(supabase, (members ?? []).map(member => member.avatar_path), "members.avatars");
+  const membersWithPhotos = (members ?? []).map(member => ({
+    id: member.id, favoriteJoke: member.favorite_joke,
+    avatarUrl: member.avatar_path ? signed.get(member.avatar_path) ?? null : null,
+    hasPhoto: Boolean(member.avatar_path),
   }));
   return <><SiteHeader /><main className="page-shell account-page">
     <h1>Members</h1>

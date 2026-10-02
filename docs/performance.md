@@ -27,3 +27,21 @@ The Storage screenshot provides more direct evidence: a signed-avatar URL creati
 - Add route-specific loading feedback for Members/Profile (the shared loading fallback currently says “Loading images…”). This improves feedback, not backend execution speed.
 
 No SQL, RLS, session validation, region, or caching behavior was changed for this baseline instrumentation. A before/after speed improvement has not yet been measured.
+
+## First optimization pass
+
+The 17:38:51 export contains 87 operation measurements across 43 requests. Three fully instrumented Members functions took 1,179–1,495 ms; two Profile functions took 972 and 1,964 ms. Profile signing reached 1,101.5 ms. Header verification on these protected pages was already only 1–2 ms. Six gallery reads took 124.3–679.8 ms. These are small samples, not percentiles or browser click-to-content measurements.
+
+Implemented after that baseline:
+
+- Only the public gallery's anonymous data fetch uses Next's Data Cache, with a 60-second revalidation interval. Gallery changes can be temporarily stale; time-based revalidation is not a strict publication deadline, especially if the upstream request fails. Neither signed URLs nor authenticated data are put in this cache.
+- Gallery content and header render as independent Suspense siblings, allowing their requests to overlap and content to stream independently.
+- Profile and owner-only history queries run concurrently after verified authentication.
+- Profile's current/history photos and Members' current photos use one signing batch per page. Results are matched by object path, duplicate paths are removed, and individual failures preserve successful photos. The existing authenticated client and Storage RLS still apply.
+- Batch timing labels are now `profile.avatars` and `members.avatars`; compare these with the previous per-photo labels. The timings include the entire batch. Reduced request count does not guarantee lower batch latency.
+
+Next validation: deploy, leave `PERF_LOGGING=true` for the experiment, and repeat the same signed-in navigation on the same hostname. Check warm gallery data-call timing, Profile's overlapping reads, signing batch duration, and photo visibility for two accounts. No deployment or measured production speedup is claimed by the local tests.
+
+### Public image header check
+
+A live HEAD request for `pikachu-shocked-face-stunned.gif` returned HTTP 200, `Cache-Control: no-cache`, and `CF-Cache-Status: MISS`. This one object requires browser revalidation; it does not establish the headers/cache state of every object. These headers originate at Supabase Storage, not the Next.js gallery data fetch. Updating existing object cache metadata requires authorized Storage write access. For public images kept immutable at their URL, configure a positive browser freshness lifetime (for example 86400 seconds), use new paths for replacements, and verify the resulting response headers. This change has not been applied remotely.

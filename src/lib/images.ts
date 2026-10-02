@@ -15,7 +15,7 @@ export async function getImages(): Promise<GalleryImage[]> {
   // Public read access: no auth session is created or persisted.
   const supabase = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-    global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: "force-cache", next: { revalidate: 60 } }) },
   });
   const { data, error } = await measureOperation("images.list", () => supabase.from("images")
     .select("id, image_url, description, created_at")
