@@ -21,7 +21,7 @@ export default function SignIn() {
     }
   }
   return <>
-    <button className="button" onClick={signIn} disabled={pending}>{pending ? "Connecting…" : "Continue with Google"}</button>
+    <button className="button button-primary" onClick={signIn} disabled={pending}>{pending ? "Connecting…" : "Continue with Google"}</button>
     {error && <p role="alert">{error}</p>}
   </>;
 }
