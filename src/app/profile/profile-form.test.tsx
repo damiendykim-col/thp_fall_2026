@@ -55,3 +55,32 @@ it("retains the draft when saving fails", async () => {
   await screen.findByText("Could not save");
   expect(sessionStorage.getItem(DRAFT_PREFIX + "owner")).toContain("Pending");
 });
+
+it("highlights only changed fields and clears the draft when all edits are reverted", () => {
+  render(form());
+  const joke = screen.getByLabelText("Favorite joke");
+  fireEvent.change(joke, { target: { value: "Different joke" } });
+  expect(joke).toHaveClass("input-changed");
+  expect(screen.getByLabelText("First name")).not.toHaveClass("input-changed");
+  expect(screen.getByText("Edited")).toBeInTheDocument();
+  expect(screen.queryByText("Unsaved changes", { exact: true })).not.toBeInTheDocument();
+  fireEvent.change(joke, { target: { value: "Joke" } });
+  expect(joke).not.toHaveClass("input-changed");
+  expect(screen.queryByText("Edited")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Save profile" })).not.toHaveClass("save-changed");
+  expect(sessionStorage.getItem(DRAFT_PREFIX + "owner")).toBeNull();
+});
+
+it("uses newly saved text as the baseline for subsequent edits and discard", async () => {
+  jest.mocked(saveProfile).mockResolvedValue({ success: true });
+  render(form());
+  const joke = screen.getByLabelText("Favorite joke");
+  fireEvent.change(joke, { target: { value: "Saved joke" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
+  await waitFor(() => expect(joke).not.toHaveClass("input-changed"));
+  fireEvent.change(joke, { target: { value: "Another edit" } });
+  expect(joke).toHaveClass("input-changed");
+  fireEvent.click(screen.getByRole("button", { name: "Discard changes" }));
+  expect(joke).toHaveValue("Saved joke");
+  expect(joke).not.toHaveClass("input-changed");
+});

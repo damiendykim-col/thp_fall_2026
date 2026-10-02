@@ -126,3 +126,10 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .profile-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .profile-actions .save-changed { background: #eee; color: #111; border-color: #fff; }
 .photo-picker:focus-visible, .history-choice:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+
+.photo-options:not([hidden]) { display: flex; flex-direction: column; gap: 16px; }
+.photo-options .field-help { margin: 0; }
+.profile-form input[type="file"] { display: block; min-width: 0; max-width: 100%; }
+.field-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.field-change-note { font-size: 11px; color: #eee; font-weight: 500; }
+.profile-form .input-changed { border-color: #eee; box-shadow: inset 3px 0 0 #eee; }

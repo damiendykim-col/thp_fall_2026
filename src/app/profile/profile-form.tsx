@@ -12,7 +12,9 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos }: {
 }) {
   const initial = (): ProfileDraft => ({ first: profile.first_name ?? "", last: profile.last_name ?? "", joke: profile.favorite_joke ?? "", previous: "", needsFile: false });
   const [draft, setDraft] = useState(initial);
-  const [dirty, setDirty] = useState(false);
+  const [baseline, setBaseline] = useState(initial);
+  const changed = { first: draft.first !== baseline.first, last: draft.last !== baseline.last, joke: draft.joke !== baseline.joke };
+  const dirty = changed.first || changed.last || changed.joke || Boolean(draft.previous || draft.needsFile);
   const [notice, setNotice] = useState("");
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -29,12 +31,13 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos }: {
     // Restore once after hydration; subsequent server renders must not overwrite edits.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setDraft(saved);
-    setDirty(true);
     setNotice(`Unsaved changes restored.${saved.needsFile ? " Please select your local photo again; it was not saved in this browser." : ""}${missing ? " The selected previous photo is unavailable. Please choose another." : ""}`);
   }, [profile.id, profile.avatar_path, previousPhotos]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   function change(next: ProfileDraft) {
-    setDraft(next); setDirty(true); setNotice(""); writeDraft(profile.id, next);
+    setDraft(next); setNotice("");
+    const hasChanges = next.first !== baseline.first || next.last !== baseline.last || next.joke !== baseline.joke || Boolean(next.previous || next.needsFile);
+    writeDraft(profile.id, hasChanges ? next : null);
   }
   function resetFile() {
     localFile.current = null;
@@ -49,8 +52,9 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos }: {
     const saved = await saveProfile(previous, data);
     if (saved.success) {
       writeDraft(profile.id, null);
-      setDraft({ first: String(data.get("first_name")).trim(), last: String(data.get("last_name")).trim(), joke: String(data.get("favorite_joke") ?? "").trim(), previous: "", needsFile: false });
-      resetFile(); setDirty(false); setNotice(""); setOpen(false);
+      const savedDraft: ProfileDraft = { first: String(data.get("first_name")).trim(), last: String(data.get("last_name")).trim(), joke: String(data.get("favorite_joke") ?? "").trim(), previous: "", needsFile: false };
+      setDraft(savedDraft); setBaseline(savedDraft);
+      resetFile(); setNotice(""); setOpen(false);
     }
     return saved;
   }, {});
@@ -66,8 +70,8 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos }: {
         <span>Change photo <span aria-hidden="true">✎</span></span>
       </button>
       {photoChanged && <p role="status">Photo change not saved. <button className="text-button confirmation-link" type="button" onClick={cancelPhoto}>Cancel photo change</button></p>}
-      <div id="photo-options" hidden={!open}>
-        <label>Upload new photo<input ref={fileInput} type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-describedby="photo-help" onChange={event => {
+      <div id="photo-options" className="photo-options" hidden={!open}>
+        <label>Upload new photo<input className={draft.needsFile ? "input-changed" : undefined} ref={fileInput} type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-describedby="photo-help" onChange={event => {
           const file = event.currentTarget.files?.[0];
           localFile.current = file ?? null;
           const invalid = Boolean(file && (file.size > MAX_AVATAR_BYTES || !AVATAR_TYPES[file.type]));
@@ -92,18 +96,17 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos }: {
         </section>
       </div>
       <input type="hidden" name="previous_avatar" value={draft.previous} />
-      <label>First name<input name="first_name" autoComplete="given-name" value={draft.first} onChange={e => change({ ...draft, first: e.target.value })} maxLength={80} required /></label>
-      <label>Last name<input name="last_name" autoComplete="family-name" value={draft.last} onChange={e => change({ ...draft, last: e.target.value })} maxLength={80} required /></label>
-      <label>Favorite joke<textarea name="favorite_joke" value={draft.joke} onChange={e => change({ ...draft, joke: e.target.value })} maxLength={MAX_FAVORITE_JOKE_CHARS} aria-describedby="favorite-joke-help" /></label>
+      <label><span className="field-label">First name{changed.first && <span className="field-change-note" id="first-edited">Edited</span>}</span><input className={changed.first ? "input-changed" : undefined} aria-label="First name" aria-describedby={changed.first ? "first-edited" : undefined} name="first_name" autoComplete="given-name" value={draft.first} onChange={e => change({ ...draft, first: e.target.value })} maxLength={80} required /></label>
+      <label><span className="field-label">Last name{changed.last && <span className="field-change-note" id="last-edited">Edited</span>}</span><input className={changed.last ? "input-changed" : undefined} aria-label="Last name" aria-describedby={changed.last ? "last-edited" : undefined} name="last_name" autoComplete="family-name" value={draft.last} onChange={e => change({ ...draft, last: e.target.value })} maxLength={80} required /></label>
+      <label><span className="field-label">Favorite joke{changed.joke && <span className="field-change-note" id="joke-edited">Edited</span>}</span><textarea className={changed.joke ? "input-changed" : undefined} aria-label="Favorite joke" name="favorite_joke" value={draft.joke} onChange={e => change({ ...draft, joke: e.target.value })} maxLength={MAX_FAVORITE_JOKE_CHARS} aria-describedby={changed.joke ? "favorite-joke-help joke-edited" : "favorite-joke-help"} /></label>
       <p className="field-help" id="favorite-joke-help">Optional. Up to {MAX_FAVORITE_JOKE_CHARS} characters. Your joke is visible to other members. We may use it to improve personalized joke suggestions and generation.</p>
       {notice && <p role="status">{notice}</p>}
       {result.error && <p role="alert">{result.error}</p>}
       {result.success && !dirty && <p role="status">Profile saved. <Link className="confirmation-link" href="/members">Continue to members</Link></p>}
-      {dirty && <p className="field-help">Unsaved changes</p>}
       <div className="profile-actions">
         <button className={`button ${dirty ? "save-changed" : ""}`} type="submit" disabled={pending}>{pending ? "Saving…" : "Save profile"}</button>
         {dirty && <button className="button" type="button" onClick={() => {
-          resetFile(); setDraft(initial()); setDirty(false); setNotice(""); writeDraft(profile.id, null);
+          resetFile(); setDraft(baseline); setNotice(""); writeDraft(profile.id, null);
         }}>Discard changes</button>}
       </div>
     </fieldset>
