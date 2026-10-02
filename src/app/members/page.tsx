@@ -1,3 +1,4 @@
+import { measureOperation } from "@/lib/performance";
 import Link from "next/link";
 import SiteHeader from "@/components/site-header";
 import { requireCompleteProfile } from "@/lib/auth";
@@ -6,15 +7,15 @@ type MemberProfile = { id: string; avatar_path: string | null; favorite_joke: st
 
 export default async function MembersPage() {
   const { supabase } = await requireCompleteProfile();
-  const { data: members, error } = await supabase.rpc("list_member_profiles") as {
+  const { data: members, error } = await measureOperation("members.list", () => supabase.rpc("list_member_profiles")) as {
     data: MemberProfile[] | null;
     error: { message: string } | null;
   };
   const membersWithPhotos = !members ? [] : await Promise.all(members.map(async (member) => {
     let avatarUrl: string | null = null;
     if (member.avatar_path) {
-      const { data, error: photoError } = await supabase.storage.from("avatars")
-        .createSignedUrl(member.avatar_path, 3600);
+      const { data, error: photoError } = await measureOperation("members.avatar", () => supabase.storage.from("avatars")
+        .createSignedUrl(member.avatar_path!, 3600));
       avatarUrl = data?.signedUrl ?? null;
       if (photoError || !avatarUrl) {
         // Do not log signed URLs or private object paths.

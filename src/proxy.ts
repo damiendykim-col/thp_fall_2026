@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { measureOperation } from "@/lib/performance";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -17,7 +18,7 @@ export async function proxy(request: NextRequest) {
     },
   });
   // Refresh and verify sessions before Server Components read their cookies.
-  await supabase.auth.getUser();
+  await measureOperation("proxy.auth", () => supabase.auth.getUser());
   response.headers.set("Cache-Control", "private, no-store");
   return response;
 }

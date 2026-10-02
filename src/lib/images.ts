@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { measureOperation } from "./performance";
 
 export type GalleryImage = {
   id: string;
@@ -16,9 +17,9 @@ export async function getImages(): Promise<GalleryImage[]> {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
   });
-  const { data, error } = await supabase.from("images")
+  const { data, error } = await measureOperation("images.list", () => supabase.from("images")
     .select("id, image_url, description, created_at")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false }));
   if (error) throw new Error(`Unable to fetch images: ${error.message}`);
   return data ?? [];
 }
