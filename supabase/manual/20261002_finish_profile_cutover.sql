@@ -1,10 +1,11 @@
 -- MANUAL, DESTRUCTIVE FINAL STAGE. Not in the automatic migration directory.
 -- Apply ONLY after deploying the new app, verifying two accounts and a fresh
 -- signup, retiring old deployments, and exporting the database.
--- Defaults to refusing execution. Follow docs/profile-schema-rollout.md.
+-- User authorized final cleanup after reporting the cutover app working, Oct 2.
+-- Run the entire file once. Follow docs/profile-schema-rollout.md.
 begin;
 set local lock_timeout = '10s';
-set local app.profile_cleanup_confirmed = 'no'; -- change to 'yes' only after checks
+set local app.profile_cleanup_confirmed = 'yes'; -- authorized final cleanup
 do $$
 begin
   if current_setting('app.profile_cleanup_confirmed') <> 'yes' then
@@ -107,7 +108,6 @@ declare
   first_text text := btrim(p_first_name);
   last_text text := btrim(p_last_name);
   joke_text text := nullif(btrim(p_favorite_joke), '');
-  old_path text;
 begin
   if caller is null then
     raise exception 'Sign in required' using errcode = '42501';
@@ -169,6 +169,31 @@ drop policy "Update own profile" on public.profiles;
 drop function public.list_member_profiles();
 drop table public.profile_avatar_history;
 alter table public.profiles drop column avatar_path, drop column favorite_joke;
+
+-- Verify the final privilege boundary, including unexpected pre-existing grants.
+-- This also covers the table-grant result omitted from the earlier export.
+do $$
+declare
+  table_name text;
+  api_role text;
+begin
+  foreach table_name in array array['public.profiles','public.member_profiles','public.profile_photos'] loop
+    foreach api_role in array array['anon','authenticated'] loop
+      if has_table_privilege(api_role, table_name, 'INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER')
+        or has_any_column_privilege(api_role, table_name, 'INSERT, UPDATE, REFERENCES') then
+        raise exception 'Unexpected direct write grant for % on %; cleanup rolled back', api_role, table_name;
+      end if;
+    end loop;
+    if has_table_privilege('anon', table_name, 'SELECT')
+      or has_any_column_privilege('anon', table_name, 'SELECT') then
+      raise exception 'Unexpected anonymous read grant on %; cleanup rolled back', table_name;
+    end if;
+    if not has_table_privilege('authenticated', table_name, 'SELECT') then
+      raise exception 'Missing authenticated read grant on %; cleanup rolled back', table_name;
+    end if;
+  end loop;
+end;
+$$;
 
 notify pgrst, 'reload schema';
 commit;

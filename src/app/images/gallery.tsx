@@ -18,7 +18,7 @@ function formatDate(value: string) {
 
 export default function Gallery({ images }: { images: GalleryImage[] }) {
   const [view, setView] = useState<"cards" | "list" | "table">("cards");
-  const [sort, setSort] = useState("newest");
+  const [sort, setSort] = useState<"newest" | "oldest">("newest");
   const [activeId, setActiveId] = useState<string | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const sorted = [...images].sort((a, b) => {
@@ -45,7 +45,13 @@ export default function Gallery({ images }: { images: GalleryImage[] }) {
         <div className="view-switch" role="group" aria-label="Image layout">
           {(["cards", "list", "table"] as const).map((layout) => <button key={layout} aria-pressed={view === layout} onClick={() => setView(layout)}>{layout[0].toUpperCase() + layout.slice(1)}</button>)}
         </div>
-      {images.length > 0 && <label className="sort-label">Sort by <select value={sort} onChange={(event) => setSort(event.target.value)}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label>}
+      {images.length > 0 && <div className="sort-label">
+          <span>Sort by</span>
+          <div className="view-switch" role="group" aria-label="Sort images">
+            <button type="button" aria-pressed={sort === "newest"} onClick={() => setSort("newest")}>Newest first</button>
+            <button type="button" aria-pressed={sort === "oldest"} onClick={() => setSort("oldest")}>Oldest first</button>
+          </div>
+        </div>}
       </div>
     </div>
     {images.length === 0 ? <div className="status-panel"><h3>No images yet.</h3><p>Images will appear here when they are added.</p></div> :

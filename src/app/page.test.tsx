@@ -11,13 +11,17 @@ describe("Image gallery", () => {
     render(<Gallery images={images} />);
     expect(screen.getAllByRole("img")[0]).toHaveAttribute("src", images[1].image_url);
     expect(screen.getByAltText("Community meme")).toBeInTheDocument();
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "oldest" } });
+    fireEvent.click(screen.getByRole("button", { name: "Oldest first" }));
     expect(screen.getAllByRole("img")[0]).toHaveAttribute("src", images[0].image_url);
+    expect(screen.getByRole("button", { name: "Oldest first" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Newest first" })).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(screen.getByRole("button", { name: "Newest first" }));
+    expect(screen.getAllByRole("img")[0]).toHaveAttribute("src", images[1].image_url);
   });
 
   it("switches between cards, list, and table while preserving sort order", () => {
     render(<Gallery images={images} />);
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "oldest" } });
+    fireEvent.click(screen.getByRole("button", { name: "Oldest first" }));
     fireEvent.click(screen.getByRole("button", { name: "List" }));
     expect(screen.getByText("Untitled image")).toBeInTheDocument();
     expect(screen.getAllByRole("img")[0]).toHaveAttribute("src", images[0].image_url);
@@ -33,7 +37,7 @@ describe("Image gallery", () => {
   it("shows an empty state", () => {
     render(<Gallery images={[]} />);
     expect(screen.getByText(/No images yet/)).toBeInTheDocument();
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: "Sort images" })).not.toBeInTheDocument();
   });
 
   it("shows a fallback when an image fails to load", () => {

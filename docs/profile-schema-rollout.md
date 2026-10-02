@@ -1,12 +1,17 @@
 # Profile schema and RLS rollout
 
-Updated October 2, 2026. Phase-1 triggers, function definitions, policies and data parity were confirmed
-by the user's preflight results.
-The app cutover is prepared locally. User-supplied verification now confirms the
-new save function and its expected grants are present after migration 003. Final
-cleanup and app deployment remain unconfirmed; no remote changes were made by the agent.
+Updated October 2, 2026. User-supplied post-cleanup verification confirms the
+normalized schema, permanent identity trigger, expected function/table grants,
+enabled RLS and zero identity/eligibility mismatches. Legacy objects are gone.
+The user reported the cutover app working before cleanup. Post-cleanup profile
+saving and fresh Google signup still need confirmation. No remote changes were
+performed by the agent.
 
-## Current rollout: next steps
+**Database cleanup verified. Do not rerun migration 003 or the manual cleanup.**
+Next: smoke-test saving a profile, uploading/restoring a photo, and fresh signup.
+The rollout sequence below is retained as an execution record, not a rerun request.
+
+## Rollout sequence (historical)
 
 1. Run [preflight](../supabase/tests/profile_cutover_preflight.sql) and review **all**
    result sets against the repository. This includes Auth signup/email triggers,
@@ -23,9 +28,9 @@ cleanup and app deployment remain unconfirmed; no remote changes were made by th
    two-account/fresh-Google-signup tests below. On a staging database, run
    [behavior checks](../supabase/tests/profile_cutover_behavior.sql) as well.
 5. Retire old deployments/preview URLs and close or reload old client sessions.
-   Export again. Only after successful checks, change the explicit confirmation
-   setting in [manual final cleanup](../supabase/manual/20261002_finish_profile_cutover.sql)
-   from `no` to `yes` and run the whole file. It is intentionally outside
+   Export again. The user has now authorized final cleanup; its confirmation
+   setting is `yes`. Run the entire [manual final cleanup](../supabase/manual/20261002_finish_profile_cutover.sql)
+   file once. It is intentionally outside
    `supabase/migrations` so a migration push cannot drop live dependencies early.
 6. Repeat verification and functional tests. Record the final SQL execution in
    your deployment log; do not run the single-use cleanup twice.
@@ -205,7 +210,9 @@ Access rules:
 - [ ] SQL executed on staging / live Supabase.
 - [ ] New app deployed after migration 003.
 - [ ] Two-account API tests, real upload and fresh Google signup verified.
-- [ ] Old deployments retired and manual cleanup applied.
+- [x] Manual cleanup applied; user-supplied verification reviewed.
+- [ ] Old deployment retirement independently confirmed.
+- [ ] Post-cleanup profile-save and fresh-signup smoke tests confirmed.
 
 The phase-1 source-of-truth description below is historical until final cleanup.
 After final cleanup, legacy app rollback is no longer supported: restore a reviewed
@@ -232,8 +239,8 @@ triggers while leaving clients writing legacy columns and expecting new-table re
 
 - Local source review: grants, owner-qualified foreign key, backfill assertions,
   eligibility checks and compatibility paths included.
-- PostgreSQL execution: pending; not yet validated against a live Supabase instance.
-- Remote migration: pending user execution.
+- Remote schema migration/cleanup: user execution evidenced by post-cleanup results.
+- Save-function behavior after cleanup: pending functional verification.
 - Direct API/RLS and two-account UI tests: pending after application of scripts.
 
 References: [Supabase event triggers](https://supabase.com/docs/guides/database/postgres/event-triggers),
@@ -294,3 +301,41 @@ result was not supplied; capture it before final cleanup. These results do not
 exercise the save body, Storage ownership validation, fresh OAuth signup or RLS
 through actual API requests. Next: deploy the new app and perform functional checks.
 Do not re-run migration 003 or run destructive cleanup based only on this checkpoint.
+
+
+### Final cleanup authorized; execution pending
+
+The user reports the cutover app working and requests manual cleanup. The script's
+explicit confirmation is now enabled. It still verifies data parity under locks,
+and now checks effective table/column grants before commit: API roles must have no
+direct writes, anon must have no reads, and authenticated must retain SELECT.
+Unexpected privileges abort and roll back the whole cleanup for review. This
+covers the missing table-privileges output without guessing what it contained.
+
+Run the entire manual file in Supabase SQL Editor as postgres, then run
+profile_cutover_verify.sql. Expected: three legacy values NULL, zero mismatch,
+sync_member_identity present with neither API role allowed EXECUTE, and no
+non-SELECT column privileges. Re-test saving and fresh signup after cleanup.
+The agent has no direct Supabase SQL connection and has not executed this file.
+
+
+### Post-cleanup verification reviewed
+
+User supplied final verification results on October 2, 2026:
+
+- RLS remains enabled on all three retained tables.
+- handle_new_user, sync_profile_email and the new sync_member_identity are
+  SECURITY DEFINER with fixed empty search paths and no anon/authenticated EXECUTE.
+- save_my_profile has the same fixed search path, no anon EXECUTE, and authenticated
+  EXECUTE as intended for the controlled write API.
+- Identity/eligibility mismatches: 0.
+- Legacy history table, directory RPC and compatibility function: all absent (NULL).
+- Table grants: authenticated SELECT only on profiles, member_profiles and
+  profile_photos; no additional API table privileges appear in the supplied output.
+
+The separate non-SELECT column-privileges result was not included. The reviewed
+cleanup script asserts that no API column/table writes remain before committing;
+it is still useful to retain that empty query result in the execution record.
+Database structural cleanup is verified from these results. Post-cleanup saving,
+photo upload/restoration and a fresh Google signup remain functional smoke tests;
+these catalog results alone do not prove those flows. Do not rerun cleanup.
