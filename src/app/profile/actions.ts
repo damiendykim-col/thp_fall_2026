@@ -25,41 +25,31 @@ export async function saveProfile(_previous: ProfileResult, form: FormData): Pro
   if (selection !== null && typeof selection !== "string") return { error: "Choose a valid previous photo." };
   const selected = typeof selection === "string" ? selection : "";
   if (file && selected) return { error: "Choose either a new upload or a previous photo." };
-  if (selected) {
-    if (!selected.startsWith(`${user.id}/`)) return { error: "That photo is not in your history." };
-    const { data: owned, error: historyError } = await supabase.from("profile_avatar_history")
-      .select("avatar_path").eq("profile_id", user.id).eq("avatar_path", selected).maybeSingle();
-    if (historyError || !owned) return { error: "That photo is not in your history." };
+  if (selected && !selected.startsWith(`${user.id}/`)) {
+    return { error: "That photo is not in your collection." };
   }
-  const { data: current, error: readError } = await supabase.from("profiles")
-    .select("avatar_path").eq("id", user.id).single();
-  if (readError || !current) return { error: "Your profile couldn’t be loaded. Please try again." };
   let newPath: string | undefined;
   if (file) {
     newPath = `${user.id}/${crypto.randomUUID()}.${AVATAR_TYPES[file.type]}`;
     const { error } = await supabase.storage.from("avatars").upload(newPath, file, { contentType: file.type, upsert: false });
     if (error) return { error: "Your photo couldn’t be uploaded. Please try again." };
   }
-  const nextPath = newPath || selected;
-  if (nextPath && current.avatar_path && nextPath !== current.avatar_path && current.avatar_path.startsWith(`${user.id}/`)) {
-    const { error: historyError } = await supabase.from("profile_avatar_history").insert({
-      profile_id: user.id, avatar_path: current.avatar_path,
-    });
-    // A previously restored photo may already be in history. Keep one entry.
-    if (historyError && historyError.code !== "23505") {
-      if (newPath) await supabase.storage.from("avatars").remove([newPath]);
-      return { error: "Your photo history couldn’t be saved. Please try again." };
+  // The database validates photo ownership and saves all fields in one transaction.
+  // No caller-supplied user ID; the RPC resolves ownership from auth.uid().
+  const { data: saved, error } = await supabase.rpc("save_my_profile", {
+    p_first_name: (first as string).trim(),
+    p_last_name: (last as string).trim(),
+    p_favorite_joke: favoriteJokeText || null,
+    p_avatar_path: newPath || selected || null,
+    p_avatar_is_upload: Boolean(newPath),
+  });
+  if (error || saved !== user.id) {
+    // Only a definite database rejection proves the upload was not committed.
+    // A lost response may follow a successful commit; never delete that photo.
+    if (newPath && error && ["22023", "23503", "23514", "42501", "P0001"].includes(error.code)) {
+      await supabase.storage.from("avatars").remove([newPath]);
     }
-  }
-  const { data: saved, error } = await supabase.from("profiles").update({
-    first_name: (first as string).trim(),
-    last_name: (last as string).trim(),
-    favorite_joke: favoriteJokeText || null,
-    ...(nextPath ? { avatar_path: nextPath } : {}),
-  }).eq("id", user.id).select("id").single();
-  if (error || !saved) {
-    if (newPath) await supabase.storage.from("avatars").remove([newPath]);
-    return { error: "Your profile couldn’t be saved. Please try again." };
+    return { error: "Your profile couldn’t be saved. Please reload to check your changes before trying again." };
   }
   revalidatePath("/profile");
   revalidatePath("/members");

@@ -1,37 +1,22 @@
 /** @jest-environment node */
 import { saveProfile } from "./actions";
 import { requireUser } from "@/lib/auth";
+import { revalidatePath } from "next/cache";
 
 jest.mock("@/lib/auth", () => ({ requireUser: jest.fn() }));
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 const requireAuth = jest.mocked(requireUser);
-const read = jest.fn();
-const update = jest.fn();
-const eq = jest.fn();
+const rpc = jest.fn();
 const upload = jest.fn();
 const remove = jest.fn();
-const insert = jest.fn();
-const from = jest.fn();
-const historyRead = jest.fn();
-const historyEq = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
-  read.mockResolvedValue({ data: { avatar_path: null }, error: null });
-  eq.mockReturnValue({ select: () => ({ single: async () => ({ data: { id: "owner" }, error: null }) }) });
-  update.mockReturnValue({ eq });
-  insert.mockResolvedValue({ error: null });
-  historyRead.mockResolvedValue({ data: { avatar_path: "owner/old.png" }, error: null });
-  historyEq.mockReturnValue({ eq: historyEq, maybeSingle: historyRead });
-  from.mockImplementation((table: string) => {
-    if (table === "profiles") return { select: () => ({ eq: () => ({ single: read }) }), update };
-    if (table === "profile_avatar_history") return { insert, select: () => ({ eq: historyEq }) };
-    return null;
-  });
+  rpc.mockResolvedValue({ data: "owner", error: null });
   upload.mockResolvedValue({ error: null });
   remove.mockResolvedValue({ error: null });
   requireAuth.mockResolvedValue({
-    user: { id: "owner" }, supabase: { from, storage: { from: () => ({ upload, remove }) } },
+    user: { id: "owner" }, supabase: { rpc, storage: { from: () => ({ upload, remove }) } },
   } as unknown as Awaited<ReturnType<typeof requireUser>>);
 });
 function form() {
@@ -40,21 +25,33 @@ function form() {
   data.set("last_name", " Lovelace ");
   return data;
 }
+function withPhoto() {
+  const data = form();
+  data.set("photo", new File(["GIF89a"], "avatar.gif", { type: "image/gif" }));
+  return data;
+}
 it("requires authentication even for a directly invoked action", async () => {
   requireAuth.mockRejectedValue(new Error("redirect:/login"));
   await expect(saveProfile({}, form())).rejects.toThrow("redirect:/login");
-  expect(update).not.toHaveBeenCalled();
+  expect(rpc).not.toHaveBeenCalled();
 });
-it("never uses a submitted user ID to choose the profile", async () => {
+it("saves atomically without forwarding a submitted user ID", async () => {
   const data = form(); data.set("id", "someone-else");
+  data.set("favorite_joke", "  A SQL query walks into a bar...  ");
   await expect(saveProfile({}, data)).resolves.toEqual({ success: true });
-  expect(eq).toHaveBeenCalledWith("id", "owner");
-  expect(update).toHaveBeenCalledWith({ first_name: "Ada", last_name: "Lovelace", favorite_joke: null });
+  expect(rpc).toHaveBeenCalledTimes(1);
+  expect(rpc).toHaveBeenCalledWith("save_my_profile", {
+    p_first_name: "Ada", p_last_name: "Lovelace",
+    p_favorite_joke: "A SQL query walks into a bar...",
+    p_avatar_path: null, p_avatar_is_upload: false,
+  });
+  expect(revalidatePath).toHaveBeenCalledWith("/members");
+  expect(revalidatePath).toHaveBeenCalledWith("/profile");
 });
 it("rejects blank names before writing", async () => {
   const data = form(); data.set("last_name", " ");
   expect(await saveProfile({}, data)).toHaveProperty("error");
-  expect(update).not.toHaveBeenCalled();
+  expect(rpc).not.toHaveBeenCalled();
 });
 it.each([
   new File(["<svg />"], "photo.svg", { type: "image/svg+xml" }),
@@ -62,75 +59,72 @@ it.each([
 ])("rejects unsupported or oversized photos", async (file) => {
   const data = form(); data.set("photo", file);
   expect(await saveProfile({}, data)).toHaveProperty("error");
-  expect(upload).not.toHaveBeenCalled();
+  expect(upload).not.toHaveBeenCalled(); expect(rpc).not.toHaveBeenCalled();
 });
-it("uploads to the owner's folder and records the old photo as history", async () => {
-  read.mockResolvedValue({ data: { avatar_path: "owner/old.png" }, error: null });
-  const data = form(); data.set("photo", new File(["test"], "photo.png", { type: "image/png" }));
-  expect(await saveProfile({}, data)).toEqual({ success: true });
-  expect(upload.mock.calls[0][0]).toMatch(/^owner\/.*\.png$/);
-  expect(insert).toHaveBeenCalledWith({ profile_id: "owner", avatar_path: "owner/old.png" });
-  expect(remove).not.toHaveBeenCalledWith(["owner/old.png"]);
+it("uploads GIFs under a unique owner path before registering them in the transaction", async () => {
+  expect(await saveProfile({}, withPhoto())).toEqual({ success: true });
+  const path = upload.mock.calls[0][0];
+  expect(path).toMatch(/^owner\/.*\.gif$/);
+  expect(upload).toHaveBeenCalledWith(path, expect.any(File), { contentType: "image/gif", upsert: false });
+  expect(rpc).toHaveBeenCalledWith("save_my_profile", expect.objectContaining({
+    p_avatar_path: path, p_avatar_is_upload: true,
+  }));
+  expect(remove).not.toHaveBeenCalled();
 });
-it("cleans up a new photo if the profile update fails", async () => {
-  eq.mockReturnValue({ select: () => ({ single: async () => ({ data: null, error: new Error("failed") }) }) });
-  const data = form(); data.set("photo", new File(["test"], "photo.png", { type: "image/png" }));
-  expect(await saveProfile({}, data)).toHaveProperty("error");
+it("does not save when upload fails", async () => {
+  upload.mockResolvedValue({ error: { message: "Failed" } });
+  expect(await saveProfile({}, withPhoto())).toHaveProperty("error");
+  expect(rpc).not.toHaveBeenCalled();
+});
+it("removes only the new upload after a definite database rejection", async () => {
+  rpc.mockResolvedValue({ data: null, error: { code: "42501" } });
+  expect(await saveProfile({}, withPhoto())).toHaveProperty("error");
   expect(remove).toHaveBeenCalledWith([upload.mock.calls[0][0]]);
+  expect(revalidatePath).not.toHaveBeenCalled();
 });
-
-it("preserves GIF uploads with the correct extension and content type", async () => {
-  const data = form();
-  const gif = new File(["GIF89a"], "avatar.gif", { type: "image/gif" });
-  data.set("photo", gif);
+it("keeps the uploaded photo when a lost response leaves commit status unknown", async () => {
+  rpc.mockResolvedValue({ data: null, error: { code: "", message: "fetch failed" } });
+  expect(await saveProfile({}, withPhoto())).toHaveProperty("error");
+  expect(remove).not.toHaveBeenCalled();
+});
+it("does not report success for an unexpected RPC response", async () => {
+  rpc.mockResolvedValue({ data: null, error: null });
+  expect(await saveProfile({}, form())).toHaveProperty("error");
+  expect(revalidatePath).not.toHaveBeenCalled();
+});
+it("clears an empty joke without changing the current photo", async () => {
+  const data = form(); data.set("favorite_joke", " ");
   expect(await saveProfile({}, data)).toEqual({ success: true });
-  expect(upload).toHaveBeenCalledWith(expect.stringMatching(/^owner\/.*\.gif$/), expect.any(File), { contentType: "image/gif", upsert: false });
+  expect(rpc).toHaveBeenCalledWith("save_my_profile", expect.objectContaining({
+    p_favorite_joke: null, p_avatar_path: null, p_avatar_is_upload: false,
+  }));
 });
-
-it("saves favorite_joke when provided", async () => {
-  const data = form();
-  data.set("favorite_joke", "  A SQL query walks into a bar...  ");
-  expect(await saveProfile({}, data)).toEqual({ success: true });
-  expect(update).toHaveBeenCalledWith({
-    first_name: "Ada",
-    last_name: "Lovelace",
-    favorite_joke: "A SQL query walks into a bar...",
-  });
-});
-
 it("rejects non-text favorite_joke values", async () => {
-  const data = form();
-  data.set("favorite_joke", new File(["haha"], "joke.txt", { type: "text/plain" }));
+  const data = form(); data.set("favorite_joke", new File(["haha"], "joke.txt"));
   expect(await saveProfile({}, data)).toHaveProperty("error");
-  expect(update).not.toHaveBeenCalled();
+  expect(rpc).not.toHaveBeenCalled();
 });
-
-it("restores an owned history photo without re-uploading or deleting files", async () => {
-  read.mockResolvedValue({ data: { avatar_path: "owner/current.png" }, error: null });
-  insert.mockResolvedValue({ error: { code: "23505" } });
+it("restores a collection photo without uploading or deleting files", async () => {
   const data = form(); data.set("previous_avatar", "owner/old.png");
   expect(await saveProfile({}, data)).toEqual({ success: true });
-  expect(historyEq).toHaveBeenCalledWith("profile_id", "owner");
-  expect(historyEq).toHaveBeenCalledWith("avatar_path", "owner/old.png");
-  expect(update).toHaveBeenCalledWith(expect.objectContaining({ avatar_path: "owner/old.png" }));
+  expect(rpc).toHaveBeenCalledWith("save_my_profile", expect.objectContaining({
+    p_avatar_path: "owner/old.png", p_avatar_is_upload: false,
+  }));
   expect(upload).not.toHaveBeenCalled(); expect(remove).not.toHaveBeenCalled();
 });
-it.each(["other/private.png", "owner/not-in-history.png"])("rejects an unauthorized selection %s", async path => {
-  historyRead.mockResolvedValue({ data: null, error: null });
-  const data = form(); data.set("previous_avatar", path);
+it("rejects a path belonging to another user before calling the database", async () => {
+  const data = form(); data.set("previous_avatar", "other/private.png");
   expect(await saveProfile({}, data)).toHaveProperty("error");
-  expect(update).not.toHaveBeenCalled(); expect(upload).not.toHaveBeenCalled();
+  expect(rpc).not.toHaveBeenCalled();
 });
-it("does not change the current photo if history cannot be retained", async () => {
-  read.mockResolvedValue({ data: { avatar_path: "owner/current.png" }, error: null });
-  insert.mockResolvedValue({ error: { code: "42501" } });
-  const data = form(); data.set("previous_avatar", "owner/old.png");
+it("surfaces a database ownership rejection without claiming success", async () => {
+  rpc.mockResolvedValue({ data: null, error: { code: "42501" } });
+  const data = form(); data.set("previous_avatar", "owner/not-in-collection.png");
   expect(await saveProfile({}, data)).toHaveProperty("error");
-  expect(update).not.toHaveBeenCalled(); expect(remove).not.toHaveBeenCalled();
+  expect(revalidatePath).not.toHaveBeenCalled(); expect(remove).not.toHaveBeenCalled();
 });
-it("rejects conflicting upload and history selections", async () => {
-  const data = form(); data.set("previous_avatar", "owner/old.png");
-  data.set("photo", new File(["GIF"], "photo.gif", { type: "image/gif" }));
+it("rejects conflicting upload and collection selections", async () => {
+  const data = withPhoto(); data.set("previous_avatar", "owner/old.png");
   expect(await saveProfile({}, data)).toHaveProperty("error");
-  expect(update).not.toHaveBeenCalled();
+  expect(rpc).not.toHaveBeenCalled(); expect(upload).not.toHaveBeenCalled();
 });

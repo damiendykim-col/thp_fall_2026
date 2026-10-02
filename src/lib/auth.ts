@@ -13,7 +13,7 @@ export async function requireUser() {
 export async function requireCompleteProfile() {
   const { supabase, user } = await requireUser();
   const { data, error } = await measureOperation("profile.completion", () => supabase.from("profiles")
-    .select("id, first_name, last_name, avatar_path, favorite_joke").eq("id", user.id).maybeSingle());
+    .select("id, first_name, last_name").eq("id", user.id).maybeSingle());
   if (error || !isProfileComplete(data)) redirect("/profile");
-  return { supabase, user, profile: data as Profile };
+  return { supabase, user, profile: data as Pick<Profile, "id" | "first_name" | "last_name"> };
 }

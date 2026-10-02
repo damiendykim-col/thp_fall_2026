@@ -7,13 +7,15 @@ jest.mock("@/components/site-header", () => ({ __esModule: true, default: () => 
 
 const auth = jest.mocked(requireCompleteProfile);
 const sign = jest.fn();
-const rpc = jest.fn();
+const list = jest.fn();
+const select = jest.fn(() => ({ eq: list }));
+const from = jest.fn(() => ({ select }));
 beforeEach(() => {
   jest.clearAllMocks();
-  auth.mockResolvedValue({ supabase: { rpc, storage: { from: () => ({ createSignedUrls: sign }) } } } as unknown as Awaited<ReturnType<typeof requireCompleteProfile>>);
+  auth.mockResolvedValue({ supabase: { from, storage: { from: () => ({ createSignedUrls: sign }) } } } as unknown as Awaited<ReturnType<typeof requireCompleteProfile>>);
 });
 it("renders signed photos for multiple members without personal details", async () => {
-  rpc.mockResolvedValue({ data: [
+  list.mockResolvedValue({ data: [
     { id: "one", avatar_path: "one/current.gif", favorite_joke: "First joke", email: "private@example.com", first_name: "Private name" },
     { id: "two", avatar_path: "two/current.png", favorite_joke: "Second joke" },
   ], error: null });
@@ -28,7 +30,7 @@ it("renders signed photos for multiple members without personal details", async 
   expect(screen.queryByText("private@example.com")).not.toBeInTheDocument();
 });
 it("distinguishes a signing failure from a member with no photo", async () => {
-  rpc.mockResolvedValue({ data: [
+  list.mockResolvedValue({ data: [
     { id: "one", avatar_path: "one/current.gif", favorite_joke: "First joke" },
     { id: "two", avatar_path: null, favorite_joke: null },
   ], error: null });

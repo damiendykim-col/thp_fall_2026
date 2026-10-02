@@ -8,7 +8,8 @@ type MemberProfile = { id: string; avatar_path: string | null; favorite_joke: st
 
 export default async function MembersPage() {
   const { supabase } = await requireCompleteProfile();
-  const { data: members, error } = await measureOperation("members.list", () => supabase.rpc("list_member_profiles")) as {
+  const { data: members, error } = await measureOperation("members.list", () => supabase.from("member_profiles")
+    .select("id:profile_id, avatar_path:current_avatar_path, favorite_joke").eq("is_listed", true)) as {
     data: MemberProfile[] | null;
     error: { message: string } | null;
   };
