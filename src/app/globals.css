@@ -139,3 +139,13 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .field-label { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .field-change-note { font-size: 11px; color: var(--accent); font-weight: 500; }
 .profile-form .input-changed { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+
+.member-card { height: 100%; }
+.member-details { min-width: 0; }
+.member-card-own { border-color: var(--accent); text-decoration: none; }
+.member-card-own:hover { background: #191703; }
+.member-you { display: block; color: var(--accent); font-size: 11px; font-weight: 600; margin-bottom: 6px; }
+.member-edit { display: block; color: var(--accent); font-size: 12px; margin-top: 12px; }
+.account-loading-blocks { display: grid; gap: 16px; max-width: 420px; }
+.account-loading-block { height: 44px; border: 1px solid var(--border); border-radius: 4px; background: #111; }
+.account-loading-photo { height: 96px; width: 96px; border-radius: 50%; }

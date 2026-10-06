@@ -28,6 +28,7 @@ The server queries Supabase on each page request, so newly added records appear 
 - `npm run lint`
 - `npm test -- --runInBand`
 - `npm run build`
+- `npm run test:e2e` (after local Supabase setup; see below)
 
 ## Vercel
 
@@ -36,3 +37,12 @@ Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` 
 ## Assignment 3
 
 See [the setup guide](docs/assignment-3-setup.md) for the SQL migration, Google OAuth client configuration, exact callback URLs, and end-to-end verification. `/profile` requires sign-in; `/members` also requires both profile names. The gallery remains public.
+
+
+## End-to-end tests and local test login
+
+See [the E2E guide](docs/e2e.md) for isolated Supabase setup, Playwright, and CI.
+With Docker running, use `npm run e2e:setup` then `npm run test:e2e`.
+For manual testing without Google, run `npm run e2e:account` and `npm run e2e:dev`.
+The server-only `E2E_AUTH_ENABLED` flag works only in development with local
+Supabase; it is rejected in production and never bypasses session or RLS checks.

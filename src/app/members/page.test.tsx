@@ -12,7 +12,7 @@ const select = jest.fn(() => ({ eq: list }));
 const from = jest.fn(() => ({ select }));
 beforeEach(() => {
   jest.clearAllMocks();
-  auth.mockResolvedValue({ supabase: { from, storage: { from: () => ({ createSignedUrls: sign }) } } } as unknown as Awaited<ReturnType<typeof requireCompleteProfile>>);
+  auth.mockResolvedValue({ user: { id: "one" }, supabase: { from, storage: { from: () => ({ createSignedUrls: sign }) } } } as unknown as Awaited<ReturnType<typeof requireCompleteProfile>>);
 });
 it("renders signed photos for multiple members without personal details", async () => {
   list.mockResolvedValue({ data: [
@@ -22,6 +22,9 @@ it("renders signed photos for multiple members without personal details", async 
   sign.mockImplementation(async (paths: string[]) => ({ data: paths.slice().reverse().map(path => ({ path, signedUrl: `https://example.com/${path}`, error: null })), error: null }));
   render(await MembersPage());
   expect(screen.getAllByRole("img")).toHaveLength(2);
+  expect(screen.getByRole("link", { name: "Edit your profile" })).toHaveAttribute("href", "/profile");
+  expect(screen.getAllByRole("link")).toHaveLength(1);
+  expect(screen.getByText("You", { exact: true })).toBeInTheDocument();
   expect(sign).toHaveBeenCalledTimes(1);
   expect(sign).toHaveBeenCalledWith(["one/current.gif", "two/current.png"], 3600);
   expect(screen.getAllByRole("img")[0]).toHaveAttribute("src", "https://example.com/one/current.gif");
