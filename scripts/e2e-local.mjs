@@ -30,6 +30,7 @@ if (command === "start") {
     resolve(workdir, "supabase/migrations/202610020004_finish_profile_cutover.sql"));
   copyFileSync(resolve(root, "e2e/seed.sql"), resolve(workdir, "supabase/seed.sql"));
   run(["start"], true);
+  run(["migration", "up", "--local"], true);
   const status = JSON.parse(run(["status", "-o", "json"], true));
   if (status.API_URL !== "http://127.0.0.1:55421") throw new Error("Unexpected local API URL.");
   writeFileSync(resolve(workdir, "env.json"), JSON.stringify({
@@ -56,6 +57,10 @@ if (command === "start") {
     cwd: root, stdio: "inherit", env: {
       ...process.env, E2E_AUTH_ENABLED: "true", E2E_BUILD: "true",
       NEXT_PUBLIC_SUPABASE_URL: env.url, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.anonKey,
+      SUPABASE_SERVICE_ROLE_KEY: env.serviceKey,
+      SUPABASE_SECRET_KEY: "",
+      GEMINI_API_KEY: "",
+      LLM_PROVIDER: "mock",
     },
   });
 } else throw new Error("Use start, reset, stop, account or dev.");

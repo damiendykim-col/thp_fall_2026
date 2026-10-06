@@ -28,6 +28,10 @@ export default defineConfig({
       E2E_BUILD: "true",
       NEXT_PUBLIC_SUPABASE_URL: env.url,
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: env.anonKey,
+      SUPABASE_SERVICE_ROLE_KEY: env.serviceKey,
+      SUPABASE_SECRET_KEY: "",
+      GEMINI_API_KEY: "",
+      LLM_PROVIDER: "mock",
     },
   },
 });

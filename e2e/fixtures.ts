@@ -32,11 +32,13 @@ export const test = base.extend<{ accounts: Accounts }>({
     } finally {
       // Only remove accounts and files created by this test; never list/delete all users.
       for (const account of created) {
-        const { data: files, error: listError } = await admin.storage.from("avatars").list(account.id);
+        for (const bucket of ["avatars", "challenge-images"]) {
+        const { data: files, error: listError } = await admin.storage.from(bucket).list(account.id);
         if (listError) throw listError;
         if (files?.length) {
-          const { error } = await admin.storage.from("avatars").remove(files.map(f => `${account.id}/${f.name}`));
+          const { error } = await admin.storage.from(bucket).remove(files.map(f => `${account.id}/${f.name}`));
           if (error) throw error;
+        }
         }
         const { error } = await admin.auth.admin.deleteUser(account.id);
         if (error) throw error;

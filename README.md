@@ -46,3 +46,8 @@ With Docker running, use `npm run e2e:setup` then `npm run test:e2e`.
 For manual testing without Google, run `npm run e2e:account` and `npm run e2e:dev`.
 The server-only `E2E_AUTH_ENABLED` flag works only in development with local
 Supabase; it is rejected in production and never bypasses session or RLS checks.
+
+## Caption challenges (Assignment 4)
+
+See [Stage 1 setup](docs/design/01-stage-1-setup.md) for the hosted SQL migration,
+server-only Gemini configuration, test workflow and current limits.

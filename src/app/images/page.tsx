@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import Loading from "./loading";
 import SiteHeader from "@/components/site-header";
@@ -11,6 +12,7 @@ async function ImageFeed() {
   try { images = await getImages(); }
   catch (error) { console.error("Gallery load failed", error); failed = true; }
   return <main className="page-shell">
+      <p className="gallery-challenge-link"><Link href="/challenges/new">Turn an image into a caption challenge →</Link></p>
       <section id="feed" aria-label="Image feed" tabIndex={-1}>
         {failed ? <div className="status-panel" role="alert"><h2>Unable to load images.</h2><p>We couldn’t load the images. Try again in a moment.</p><a className="button" href="/images">Try again</a></div> : <Gallery images={images} />}
       </section>
