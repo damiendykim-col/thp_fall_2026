@@ -27,3 +27,12 @@ test("anonymous visitors cannot access profile or members", async ({ page }) => 
     await expect(page.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible();
   }
 });
+
+test("a first-visit OAuth return to the site root is handled instead of silently showing the gallery", async ({page}) => {
+  // A deliberately invalid code must reach the callback and its recoverable error.
+  // This exercises routing, not Google or a successful real OAuth exchange.
+  await page.goto("/?code=invalid-e2e-code&next=https://example.invalid");
+  await expect(page).toHaveURL(/\/auth\/error$/);
+  await expect(page.getByRole("heading", {name:"Sign-in wasn’t completed"})).toBeVisible();
+  await expect(page.getByRole("heading", {name:"Images",exact:true})).toHaveCount(0);
+});

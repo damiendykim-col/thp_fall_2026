@@ -100,3 +100,21 @@ Verify with two signed-in accounts after applying the migration:
 The favorite-joke helper text now discloses member visibility and possible use
 for personalized joke suggestions and generation. This is a disclosure only;
 no new recommendation, generation, or data-sharing pipeline is implemented.
+
+### If the first Google login returns to the gallery signed out
+
+The app starts OAuth with the current origin's `/auth/callback`. If Supabase rejects
+that redirect, it may return to the configured Site URL instead. The home page now
+forwards returned authorization codes to `/auth/callback` rather than ignoring them.
+This can recover a same-origin fallback, but it cannot transfer PKCE verifier cookies
+between deployment hostnames.
+
+Compare the host you started on with the host you landed on (do not share the code
+or full callback query string). Use the stable production URL for normal sign-in.
+To test a deployment-specific URL, allow that exact URL plus `/auth/callback` in
+Supabase Authentication → URL Configuration. Do not change Google's redirect URI:
+it still points to Supabase's `/auth/v1/callback`.
+
+A passing password-based E2E login is not proof that Google OAuth or the hosted
+redirect allowlist works. The root-return regression covers local routing; verify
+first-attempt Google login on the deployed hostname in a fresh browser session.
