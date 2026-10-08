@@ -79,6 +79,7 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
 
   return (
     <form action={action} className="challenge-form">
+      <p className="muted">Images and captions must pass safety checks before publication. Dark humor and satire are welcome; targeted abuse and harmful content are not. If a check fails, revise the content or retry later.</p>
       <p className="muted">When you select an upload, its image is sent to Google Gemini to suggest a description. Review it before continuing, or write your own if generation fails. Google’s free API tier may use submitted content to improve its products.</p>
       <label>Image source
         <select aria-label="Image source" value={source} disabled={pending} onChange={e => { resetReview(); selectedFile.current = null; setPreview(""); setTemplate(""); setSource(e.target.value); }}>
@@ -129,7 +130,7 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
       <label>Your caption
         <textarea name="caption" value={caption} onChange={e => setCaption(e.target.value)} required maxLength={280} placeholder="Your best line, up to 280 characters." />
       </label>
-      <p className="muted">The confirmed description and optional joke context accompany the image when generating your opponent. Your caption is never sent to the model.</p>
+      <p className="muted">The confirmed description and optional joke context accompany the image when generating your opponent. Your caption is sent separately to Gemini for safety checking, but never to the opponent-caption generator.</p>
       <p className="muted">Publish only images you have permission to share. Challenges are visible to signed-in users; attribution and results appear after 24 hours. Descriptions and context are frozen when you create the draft.</p>
       {state.error && <p role="alert">{state.error}</p>}
       <button className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed || !caption.trim()}>{pending ? "Saving draft…" : "Create draft"}</button>

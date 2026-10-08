@@ -13,6 +13,11 @@ export const test = base.extend<{ accounts: Accounts }>({
     const admin = createClient(env.url, env.serviceKey, { auth: authOptions });
     const created: Account[] = [];
     try {
+      // Curated test fixtures only. Production templates require a moderator's visual review.
+      const { data: templates, error: templateError } = await admin.from("images").select("id,image_url");
+      if (templateError) throw templateError;
+      const { error: reviewError } = await admin.from("challenge_template_reviews").upsert((templates ?? []).map(t => ({ template_id: t.id, image_url: t.image_url, policy_version: "moderation-v1" })));
+      if (reviewError) throw reviewError;
       await provide({
         admin,
         anonymous: createClient(env.url, env.anonKey, { auth: authOptions }),
@@ -63,3 +68,15 @@ export async function completeProfile(page: Page, joke = "A SQL query walks into
   await expect(page.getByText("Profile saved.", { exact: false })).toBeVisible();
 }
 export const gif = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
+
+// Explicit trusted fixtures for tests that construct ready challenges without provider calls.
+export async function approveForTest(admin: SupabaseClient, owner: string, challengeId: string) {
+  const ids: Record<string, string> = {};
+  for (const phase of ["image", "human", "ai"]) {
+    const { data, error } = await admin.from("moderation_checks").insert({ owner_id: owner, phase, input_hash: randomUUID(), policy_version: "moderation-v1", provider: "mock", model: "fixture", status: "approved", category: "none" }).select("id").single();
+    if (error || !data) throw error ?? new Error("Moderation fixture missing");
+    ids[phase] = data.id;
+  }
+  const { error } = await admin.from("challenges").update({ asset_moderation_id: ids.image, human_moderation_id: ids.human, ai_moderation_id: ids.ai }).eq("id", challengeId);
+  if (error) throw error;
+}

@@ -43,5 +43,7 @@ still-image uploads, and one successful AI generation per draft. See the
 [implementation guide](01-stage-1-setup.md) for exact limits.
 
 Remaining work is caption-quality/persona evaluation with PM feedback, then the
-Stage 2 taxonomy, privacy, confidence and similarity-model decisions. Pagination,
-automated abandoned-upload cleanup, and moderation/reporting remain deferred.
+Stage 2 taxonomy, privacy, confidence and similarity-model decisions. Pagination
+and automated abandoned-upload cleanup remain deferred. A first
+[challenge moderation and reporting workflow](../moderation.md) is implemented
+locally and requires deployment.

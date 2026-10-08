@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { generateOpponent, publishChallenge, voteChallenge } from "../actions";
 import type { Challenge, ChallengeResult } from "@/lib/challenges/types";
@@ -40,6 +41,6 @@ export default function ChallengePanel({ challenge: c }: { challenge: Challenge 
     </article>)}</div>
     {c.closed && <p role="status">{total===0?"No votes this round.":winner?`${winner==="ai"?"AI":"Human"} caption wins this round.`:"It’s a tie."}</p>}
     {c.own && !published && <div className="challenge-controls">{c.status==="ready" ? <button className="button button-primary" disabled={pending} onClick={()=>run(()=>publishChallenge(c.id))}>Publish for 24 hours</button> : <button className="button button-primary" disabled={pending} onClick={()=>run(()=>generateOpponent(c.id))}>{pending?"Generating…":c.status==="generating"?"Check / retry generation":c.status==="failed"?"Retry AI generation":"Generate AI opponent"}</button>}</div>}
-    {error && <p role="alert">{error}</p>}
+    {error && <><p role="alert">{error}</p>{c.own && !published && <Link href="/challenges/new">Start a revised challenge</Link>}</>}
   </section>;
 }

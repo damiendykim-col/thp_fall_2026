@@ -13,6 +13,10 @@ The app uses a minimal black theme with yellow accents and deploys to Vercel.
 
 Templates are public. Challenges, winners, and profile editing require sign-in. The Members page also requires a completed first and last name. Production sign-in uses Google OAuth.
 
+## Content moderation
+
+Challenge images and human/AI captions must pass safety checks before publication. Users can report challenges; creators and moderators can hide them. Moderator setup and template visual approval are documented in the [moderation guide](docs/moderation.md). Human captions are checked in a separate Gemini request and remain excluded from opponent generation.
+
 ## Run locally without external credentials
 
 Use **Node.js 22** and **Docker**. Start Docker, then run:
@@ -76,7 +80,7 @@ New challenge uploads accept still JPEG, PNG, and WebP images up to 2 MB and are
 
 The local workflow above is the quickest way to explore the app. To use a hosted Supabase project and real Gemini generation:
 
-1. Follow the [Auth and profile setup](docs/assignment-3-setup.md), [profile schema rollout](docs/profile-schema-rollout.md), [caption challenge setup](docs/design/01-stage-1-setup.md), [winners migration](docs/winners-gallery.md), and [image-description migration](docs/image-descriptions.md), in that order. For an existing database, check which migrations and manual cutover steps are already applied before running SQL. A Vercel deployment does **not** apply database migrations.
+1. Follow the [Auth and profile setup](docs/assignment-3-setup.md), [profile schema rollout](docs/profile-schema-rollout.md), [caption challenge setup](docs/design/01-stage-1-setup.md), [winners migration](docs/winners-gallery.md), [image-description migration](docs/image-descriptions.md), and [moderation setup](docs/moderation.md), in that order. For an existing database, check which migrations and manual cutover steps are already applied before running SQL. A Vercel deployment does **not** apply database migrations.
 2. Configure the deployment environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: browser-safe Supabase connection settings.
    - `SUPABASE_SECRET_KEY` **or** `SUPABASE_SERVICE_ROLE_KEY`: server-only administrative access.

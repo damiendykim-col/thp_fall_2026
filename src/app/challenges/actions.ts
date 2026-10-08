@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { challengeAdmin } from "@/lib/challenges/server";
 import { captionPrompt, generateCaption, generationConfig } from "@/lib/challenges/generation";
+import { ensureModerated, humanReviewText, moderationMessage, ModerationError, requireTemplateReview, reviewChallenge } from "@/lib/challenges/moderation";
 import type { ChallengeResult } from "@/lib/challenges/types";
 
 export async function createChallenge(_: ChallengeResult, form: FormData): Promise<ChallengeResult> {
@@ -20,17 +21,32 @@ export async function createChallenge(_: ChallengeResult, form: FormData): Promi
   }
   if (Boolean(imageId) === Boolean(template)) return { error: "Choose one uploaded image or template." };
   try {
-    const { data, error } = await challengeAdmin().rpc("create_reviewed_challenge", {
+    const admin = challengeAdmin();
+    let imageBytes: Buffer | undefined;
+    if (imageId) {
+      const { data: image } = await admin.from("challenge_images").select("storage_path,moderation_id,upload_ready").eq("id", imageId).eq("owner_id", user.id).single();
+      if (!image?.upload_ready) throw new ModerationError("Image unavailable.");
+      const { data: safe } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
+      if (!safe) throw new ModerationError("The image must pass safety checking first.");
+      const { data: file, error: downloadError } = await admin.storage.from("challenge-images").download(image.storage_path);
+      if (downloadError || !file) throw new ModerationError("The image could not be checked. Please retry.");
+      imageBytes = Buffer.from(await file.arrayBuffer());
+    } else await requireTemplateReview(template);
+    await ensureModerated(user.id, "human", humanReviewText(description, context, caption), imageBytes);
+    const { data, error } = await admin.rpc("create_reviewed_challenge", {
       p_owner: user.id, p_image_id: imageId || null, p_template: template || null,
       p_description: description, p_context: context, p_caption: caption,
       p_submission: String(form.get("submission") ?? ""),
       p_confirmed: true, p_manual: form.get("manual") === "true",
     });
     if (error) return { error: "The draft could not be saved. Check the image and your daily limit." };
+    // The submission ID may refer to an earlier successful request. Bind approval
+    // to its canonical stored content, never to replacement form fields.
+    await reviewChallenge(user.id, data, false);
     revalidatePath("/challenges");
     return { id: data };
-  } catch {
-    return { error: "Unable to create challenge. Your uploaded image can be reused when you retry." };
+  } catch (error) {
+    return { error: moderationMessage(error) };
   }
 }
 
@@ -40,8 +56,7 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
   try {
     const config = generationConfig();
     const admin = challengeAdmin();
-    const { data: challenge, error } = await admin.from("challenges").select("situation,image_path,image_description,joke_context").eq("id", id).eq("creator_id", user.id).single();
-    if (error || !challenge) return { error: "Challenge unavailable." };
+    const { challenge, bytes } = await reviewChallenge(user.id, id, false);
     const prompt = captionPrompt(
       challenge.image_description ? challenge.joke_context ?? "" : challenge.situation,
       challenge.image_path, challenge.image_description ?? undefined,
@@ -49,15 +64,15 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
     const { data, error: claimError } = await admin.rpc("claim_caption_generation", { p_owner: user.id, p_challenge: id, p_provider: config.provider, p_model: config.model, p_prompt: prompt });
     if (claimError) return { error: "Generation is already running, complete, or at its limit. Interrupted requests can be retried after two minutes." };
     request = data;
-    let bytes: Buffer | undefined;
-    if (challenge.image_path) {
-      const { data: image, error: downloadError } = await admin.storage.from("challenge-images").download(challenge.image_path);
-      if (downloadError || !image) throw new Error("The saved image could not be loaded. Please retry.");
-      bytes = Buffer.from(await image.arrayBuffer());
-    }
     const caption = await generateCaption(config, prompt, bytes);
+    const aiCheck = await ensureModerated(user.id, "ai", humanReviewText(
+      challenge.image_description || challenge.situation,
+      challenge.image_description ? challenge.joke_context || "" : "", caption,
+    ), bytes);
     const { error: saveError } = await admin.rpc("finish_caption_generation", { p_request: request, p_caption: caption });
     if (saveError) throw new Error("The caption could not be saved. Please retry.");
+    const { error: approvalError } = await admin.from("challenges").update({ ai_moderation_id: aiCheck }).eq("id", id).eq("creator_id", user.id);
+    if (approvalError) throw new Error("The safety result could not be saved. Please retry publication.");
     revalidatePath(`/challenges/${id}`);
     return {};
   } catch (e) {
@@ -67,11 +82,14 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
   }
 }
 export async function publishChallenge(id: string): Promise<ChallengeResult> {
-  const { supabase } = await requireUser();
-  const { error } = await supabase.rpc("publish_caption_challenge", { p_challenge: id });
-  if (error) return { error: "The challenge could not be published. Generate the opponent first." };
-  revalidatePath("/challenges", "layout");
-  return {};
+  const { supabase, user } = await requireUser();
+  try {
+    await reviewChallenge(user.id, id, true);
+    const { error } = await supabase.rpc("publish_caption_challenge", { p_challenge: id });
+    if (error) return { error: "Publication requires approved content and both captions. Hidden challenges cannot be republished." };
+    revalidatePath("/challenges", "layout");
+    return {};
+  } catch (error) { return { error: moderationMessage(error) }; }
 }
 export async function voteChallenge(id: string, caption: string | null): Promise<ChallengeResult> {
   const { supabase } = await requireUser();

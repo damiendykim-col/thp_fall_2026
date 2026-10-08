@@ -1,4 +1,4 @@
-import { test, expect, login } from "./fixtures";
+import { test, expect, login, approveForTest } from "./fixtures";
 import sharp from "sharp";
 
 test("upload, generate, publish, blind voting, undo, switch and timed reveal", async ({ page, accounts }) => {
@@ -104,6 +104,8 @@ test("generation claims are exclusive, failed attempts retry, and successful dra
   const {data:ready}=await owner.client.rpc("read_caption_challenge",{p_challenge:id});
   expect(ready.captions).toHaveLength(2);
   expect(ready.captions.map((x:{body:string})=>x.body)).toContain("AI line");
+  expect((await owner.client.rpc("publish_caption_challenge",{p_challenge:id})).error).toBeTruthy();
+  await approveForTest(accounts.admin, owner.id, id);
   expect((await owner.client.rpc("publish_caption_challenge",{p_challenge:id})).error).toBeNull();
   const {data:first}=await owner.client.rpc("read_caption_challenge",{p_challenge:id});
   expect((await owner.client.rpc("publish_caption_challenge",{p_challenge:id})).error).toBeNull();

@@ -21,6 +21,8 @@ No description-model call is made for templates; their frames are not analyzed.
 Existing challenges keep their original situation and do not require a backfill.
 
 A failed description request leaves the upload available for manual description.
+Only images that have passed safety checking can use manual description fallback.
+See [moderation setup](moderation.md) for its additional migration.
 An interrupted request can be recovered with **Retry this image** (or by reselecting
 the same file after leaving the page). If analysis
 is still marked running, allow two minutes before recovering it for manual review.
@@ -66,7 +68,7 @@ its provenance without treating user approval as proof of visual accuracy.
 1. Run [202610080001_image_descriptions.sql](../supabase/migrations/202610080001_image_descriptions.sql)
    once in the hosted SQL editor, after the challenge/winner migrations.
 2. Deploy the app. Existing Gemini and server-only Supabase credentials are reused;
-   no new provider key is needed. The new challenge page allows 60 seconds for actions.
+   no new provider key is needed. With moderation enabled, the new challenge page allows 120 seconds for actions.
 3. Upload a non-sensitive image, inspect the real description, edit/confirm it, add
    optional context, and generate a caption. Verify description quality and that
    the human caption remains absent from the stored generation prompt.

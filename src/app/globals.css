@@ -193,3 +193,7 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 
 .challenge-form .description-confirmation { display: flex; align-items: center; gap: .75rem; }
 .challenge-form input[type="checkbox"] { width: 1.1rem; height: 1.1rem; padding: 0; flex-shrink: 0; accent-color: var(--accent); }
+
+.challenge-safety { margin-top: 2rem; }
+.challenge-safety summary { cursor: pointer; color: var(--accent); }
+.challenge-safety select { display: block; margin: .75rem 0; padding: .7rem; max-width: 100%; background: #111; color: #eee; border: 1px solid #444; }

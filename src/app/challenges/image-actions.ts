@@ -5,6 +5,8 @@ import { requireUser } from "@/lib/auth";
 import { challengeAdmin, normalizeChallengeImage } from "@/lib/challenges/server";
 import { descriptionPrompt, generateDescription, generationConfig } from "@/lib/challenges/generation";
 
+import { ensureModerated, moderationMessage } from "@/lib/challenges/moderation";
+
 export type ImageReviewResult = {
   id?: string;
   description?: string;
@@ -29,6 +31,9 @@ export async function uploadChallengeImage(form: FormData): Promise<ImageReviewR
       p_owner: user.id, p_hash: createHash("sha256").update(bytes).digest("hex"),
     });
     if (error || !image) return { error: "Unable to prepare image. Check the migration and daily limit of 10 images." };
+    const moderationId = await ensureModerated(user.id, "image", "Check this uploaded image.", bytes);
+    const { error: moderationError } = await admin.from("challenge_images").update({ moderation_id: moderationId }).eq("id", image.id).eq("owner_id", user.id);
+    if (moderationError) return { error: "The safety result could not be saved. Please retry." };
     if (!image.upload_ready) {
       const { error: uploadError } = await admin.storage.from("challenge-images").upload(image.storage_path, bytes, {
         contentType: "image/jpeg", cacheControl: "3600", upsert: false,
@@ -39,8 +44,8 @@ export async function uploadChallengeImage(form: FormData): Promise<ImageReviewR
       if (readyError) return { error: "The upload could not be finalized. Please retry." };
     }
     return { id: image.id };
-  } catch {
-    return { error: "Image upload is unavailable. Please try again." };
+  } catch (error) {
+    return { error: moderationMessage(error) };
   }
 }
 
@@ -50,6 +55,8 @@ export async function suggestImageDescription(id: string): Promise<ImageReviewRe
   const admin = challengeAdmin();
   const { data: image, error } = await admin.from("challenge_images").select("*").eq("id", id).eq("owner_id", user.id).single();
   if (error || !image?.upload_ready) return { error: "Image unavailable." };
+  const { data: safe, error: safetyError } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
+  if (safetyError || !safe) return { error: "The image must pass safety checking before description or manual review. Retry this image." };
   if (image.description_status === "succeeded") return { id, description: image.suggested_description };
   if (image.description_status === "failed" || image.confirmed_description) return fallback;
   if (image.description_status === "running") {

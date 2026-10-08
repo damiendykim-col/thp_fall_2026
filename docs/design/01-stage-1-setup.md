@@ -71,7 +71,7 @@ on production just by setting `LLM_PROVIDER=mock`.
   delete a referenced published image during manual storage maintenance.
 - Feed shows the latest 50 per filter; cursor pagination is deferred.
 - Existing provider safety defaults remain enabled and the prompt has content
-  constraints. Human captions/uploads have no dedicated moderation/reports UI yet.
+  constraints. The [moderation extension](../moderation.md) adds pre-publication checks and reporting; apply its migration before deploying that code.
 
 Gemini API contract: https://ai.google.dev/api/generate-content
 Image inputs: https://ai.google.dev/gemini-api/docs/image-understanding

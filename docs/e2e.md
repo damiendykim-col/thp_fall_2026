@@ -82,6 +82,7 @@ but do not represent Google provider behavior.
 - Mock caption generation, publication, blind voting, undo/switch, and timed reveal.
 - Generation claim exclusivity, retries, and rejection of forged or cross-user writes.
 - Winner eligibility, attribution after closing, and anonymous access restrictions.
+- Moderation failure/revision, direct publication bypass rejection, reports, role restrictions, template review, and hiding across reads/Storage/Winners.
 
 Every authenticated test creates unique accounts. Fixture teardown removes only
 those users' files, then deletes those accounts (database cascades remove rows).

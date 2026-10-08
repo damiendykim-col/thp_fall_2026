@@ -20,7 +20,7 @@ function setup(row: object | null = image) {
     maybeSingle: jest.fn().mockResolvedValue({ data: { id: "image-1" } }),
   };
   const download = jest.fn().mockResolvedValue({ data: new Blob(["image"]) });
-  const admin = { from: jest.fn(() => query), storage: { from: jest.fn(() => ({ download })) } };
+  const admin = { rpc: jest.fn().mockResolvedValue({ data: true }), from: jest.fn(() => query), storage: { from: jest.fn(() => ({ download })) } };
   jest.mocked(requireUser).mockResolvedValue({ user: { id: "owner" } } as Awaited<ReturnType<typeof requireUser>>);
   jest.mocked(challengeAdmin).mockReturnValue(admin as unknown as ReturnType<typeof challengeAdmin>);
   jest.mocked(generationConfig).mockReturnValue({ provider: "gemini", model: "test" });
@@ -51,5 +51,15 @@ test("only the request that claims analysis can invoke the model", async () => {
   const { query } = setup();
   query.maybeSingle.mockResolvedValue({ data: null });
   expect((await suggestImageDescription("image-1")).id).toBeUndefined();
+  expect(generateDescription).not.toHaveBeenCalled();
+});
+
+test("an image without safety approval cannot use manual description fallback", async () => {
+  setup({ ...image, description_status: "failed" });
+  const admin = jest.mocked(challengeAdmin)();
+  jest.mocked(admin.rpc).mockResolvedValueOnce({ data: false } as unknown as Awaited<ReturnType<typeof admin.rpc>>);
+  const result = await suggestImageDescription("image-1");
+  expect(result.id).toBeUndefined();
+  expect(result.error).toContain("must pass safety");
   expect(generateDescription).not.toHaveBeenCalled();
 });
