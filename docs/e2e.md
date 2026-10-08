@@ -78,7 +78,8 @@ but do not represent Google provider behavior.
 - GIF upload through Storage, previous-photo selection and persistence.
 - Two-user current-avatar visibility and restrictions on identity/history reads.
 - Rejected cross-user photo selection, anonymous directory reads and direct writes.
-- Challenge upload, mock generation, publication, blind voting, undo/switch, and timed reveal.
+- Challenge upload, image-description confirmation/edit/replacement, cached analysis, and manual fallback.
+- Mock caption generation, publication, blind voting, undo/switch, and timed reveal.
 - Generation claim exclusivity, retries, and rejection of forged or cross-user writes.
 - Winner eligibility, attribution after closing, and anonymous access restrictions.
 

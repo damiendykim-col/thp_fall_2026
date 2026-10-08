@@ -42,3 +42,28 @@ test("real generation fails clearly when configuration is missing", () => {
   process.env = {...original, LLM_PROVIDER:"gemini",GEMINI_API_KEY:""};
   expect(generationConfig).toThrow("not configured");
 });
+
+test("description prompts request visual facts without joke context or identity guesses", async () => {
+  const { descriptionPrompt, generateDescription } = await import("./generation");
+  const prompt = descriptionPrompt("owner/image.jpg");
+  expect(prompt.version).toBe("image-description-v1");
+  expect(prompt.system).toContain("literal");
+  expect(prompt.system).toContain("Do not identify");
+  const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue(new Response(JSON.stringify({
+    candidates: [{ finishReason: "STOP", content: { parts: [{ text: "A yellow square." }] } }],
+  })));
+  expect(await generateDescription({ provider: "gemini", model: "test" }, prompt, Buffer.from("image"))).toBe("A yellow square.");
+  const body = JSON.parse(fetchMock.mock.calls[0][1]!.body as string);
+  expect(body.contents[0].parts[1].inlineData.data).toBe(Buffer.from("image").toString("base64"));
+});
+
+test("descriptions have their own limit and caption prompts separate visual facts from context", async () => {
+  const { validateDescription } = await import("./generation");
+  expect(validateDescription("x".repeat(500))).toHaveLength(500);
+  expect(() => validateDescription("x".repeat(501))).toThrow();
+  expect(() => validateDescription(" ")).toThrow();
+  const prompt = captionPrompt("Exam week", "owner/image.jpg", "A surprised yellow character.");
+  expect(prompt.user).toContain("Image description: A surprised yellow character.");
+  expect(prompt.user).toContain("Joke context: Exam week");
+  expect(prompt.version).toBe("caption-v2");
+});

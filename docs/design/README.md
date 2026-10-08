@@ -4,6 +4,9 @@ Stage 1 is implemented. The project owner has confirmed that production validati
 and performance are satisfactory for the current scope. Stages 2 and 3 remain
 design proposals; these documents are not database migrations.
 
+The new [reviewed image descriptions](../image-descriptions.md) extension is implemented
+locally and requires its migration and deployment; it is outside that earlier sign-off.
+
 ## Delivery stages
 
 1. [Assignment 4: image uploads and caption challenges](01-caption-challenges.md)

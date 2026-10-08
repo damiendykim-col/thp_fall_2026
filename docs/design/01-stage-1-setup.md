@@ -8,6 +8,10 @@ Implemented: authenticated Challenges, upload/template drafts, server-side Gemin
 caption generation, explicit publication, one reversible upvote per voter/challenge,
 24-hour deadline, and server-enforced attribution/results reveal. Members stays separate.
 
+The subsequent [image-description review step](../image-descriptions.md) has its own
+additive migration and deployment instructions. The production sign-off above
+precedes that addition.
+
 ## Deploy in this order
 
 1. Run `supabase/migrations/202610050001_caption_challenges.sql` once in the hosted
@@ -48,9 +52,9 @@ on production just by setting `LLM_PROVIDER=mock`.
   Server decodes, rotates, resizes to fit 1600px, strips metadata and stores JPEG.
   This fits the existing 3 MB Server Action limit. Originals are not retained.
 - Gallery templates, including GIFs, use the supplied situation/scene description
-  as model input. The UI discloses that frames are not analyzed. Uploaded images
+  as model input (now a confirmed visual description plus optional joke context). The UI discloses that frames are not analyzed. Uploaded images
   use actual normalized image bytes, not generated descriptions.
-- Draft creation freezes the human caption and situation. One successful AI result
+- Draft creation freezes the human caption, confirmed image description, and optional joke context. One successful AI result
   per draft, three attempts per draft, ten attempts and ten drafts per user/day.
   If a request is interrupted, it can be reclaimed after two minutes.
 - Exact system/user prompt text, image reference/representation, generation settings,

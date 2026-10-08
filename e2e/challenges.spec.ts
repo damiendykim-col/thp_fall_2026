@@ -7,11 +7,22 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   await login(page, owner);
   await page.goto("/challenges/new");
   await page.getByLabel("Challenge image").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: await sharp({create:{width:16,height:16,channels:3,background:"#ffe01b"}}).png().toBuffer() });
-  await page.getByLabel("Situation / scene description").fill("When the midterm is tomorrow and the weekend was yesterday.");
+  await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
+  await page.getByLabel("Your caption").fill("My syllabus has entered its villain era.");
+  await expect(page.getByRole("button", { name: "Create draft", exact: true })).toBeDisabled();
+  await page.getByLabel("I confirm this image description").check();
+  await page.getByLabel("Add context for the joke (optional)").fill("When the midterm is tomorrow and the weekend was yesterday.");
   await page.getByLabel("Your caption").fill("My syllabus has entered its villain era.");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
   const id = page.url().split("/").pop()!;
+  const { data: reviewed } = await owner.client.from("challenge_images").select("*").single();
+  expect(reviewed.suggested_description).toBe("A yellow square fills the image.");
+  expect(reviewed.confirmed_description).toBe(reviewed.suggested_description);
+  expect(reviewed.description_source).toBe("accepted");
+  expect(reviewed.prompt.version).toBe("image-description-v1");
+  expect((await voter.client.from("challenge_images").select("*")).data).toEqual([]);
+  expect((await owner.client.from("challenge_images").update({ suggested_description: "Forged" }).eq("id", reviewed.id)).error).toBeTruthy();
   // Another user cannot read this draft, its captions, generation prompts or image.
   expect((await voter.client.rpc("read_caption_challenge", { p_challenge: id })).data).toBeNull();
   expect((await voter.client.from("challenge_captions").select("*")).error).toBeTruthy();
@@ -70,9 +81,7 @@ test("clients cannot forge generation, modify others' drafts or submit invalid i
   await login(page,owner);
   await page.goto("/challenges/new");
   await page.getByLabel("Challenge image").setInputFiles({name:"fake.png",mimeType:"image/png",buffer:Buffer.from("not an image")});
-  await page.getByLabel("Situation / scene description").fill("A scene");
-  await page.getByLabel("Your caption").fill("A caption");
-  await page.getByRole("button",{name:"Create draft"}).click();
+
   await expect(page.getByRole("main").getByRole("alert")).toContainText("valid, still JPEG");
 });
 
@@ -100,4 +109,97 @@ test("generation claims are exclusive, failed attempts retry, and successful dra
   expect((await owner.client.rpc("publish_caption_challenge",{p_challenge:id})).error).toBeNull();
   const {data:again}=await owner.client.rpc("read_caption_challenge",{p_challenge:id});
   expect(again.closes_at).toBe(first.closes_at);
+});
+
+test("image review preserves the AI original, supports edits/replacement and reuses analysis", async ({ page, accounts }) => {
+  const owner = await accounts.create();
+  await login(page, owner);
+  const buffer = await sharp({ create: { width: 16, height: 16, channels: 3, background: "#ffe01b" } }).png().toBuffer();
+  let analysisStarted: string | null = null;
+  for (const mode of ["edited", "replaced"]) {
+    await page.goto("/challenges/new");
+    await page.getByLabel("Challenge image").setInputFiles({ name: "review.png", mimeType: "image/png", buffer });
+    await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
+    await page.getByLabel("I confirm this image description").check();
+    if (mode === "replaced") await page.getByRole("button", { name: "Write my own description" }).click();
+    await page.getByLabel("Image description", { exact: true }).fill(`My ${mode} visual description.`);
+    await expect(page.getByLabel("I confirm this image description")).not.toBeChecked();
+    await page.getByLabel("Your caption").fill(`My ${mode} joke.`);
+    await page.getByLabel("I confirm this image description").check();
+    await page.getByRole("button", { name: "Create draft", exact: true }).click();
+    await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
+    const { data: image } = await owner.client.from("challenge_images").select("*").single();
+    expect(image.suggested_description).toBe("A yellow square fills the image.");
+    expect(image.confirmed_description).toBe(`My ${mode} visual description.`);
+    expect(image.description_source).toBe(mode);
+    if (analysisStarted) expect(image.description_started_at).toBe(analysisStarted);
+    analysisStarted = image.description_started_at;
+    const { data: challenge } = await owner.client.from("challenges").select("*").eq("id", page.url().split("/").pop()!).single();
+    expect(challenge.image_description).toBe(`My ${mode} visual description.`);
+    expect(challenge.joke_context).toBeNull();
+    expect(challenge.description_source).toBe(mode);
+  }
+  expect((await owner.client.from("challenges").select("id")).data).toHaveLength(2);
+  const { data: first } = await owner.client.from("challenges").select("image_description").eq("description_source", "edited").single();
+  expect(first?.image_description).toBe("My edited visual description.");
+});
+
+test("template descriptions need confirmation and review RPCs enforce identity and idempotency", async ({ page, accounts }) => {
+  const owner = await accounts.create();
+  const other = await accounts.create();
+  await login(page, owner);
+  await page.goto("/challenges/new");
+  await page.getByLabel("Image source").selectOption("template");
+  const { data: templates } = await owner.client.from("images").select("id").limit(1);
+  await page.getByLabel("Gallery template").selectOption(templates![0].id);
+  await page.getByLabel("Image description", { exact: true }).fill("A template's visible scene.");
+  await page.getByLabel("I confirm this image description").check();
+  await page.getByLabel("Your caption").fill("Human answer not shared with Gemini.");
+  await page.getByRole("button", { name: "Create draft", exact: true }).click();
+  await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
+  const id = page.url().split("/").pop()!;
+  await page.getByRole("button", { name: "Generate AI opponent" }).click();
+  await expect(page.getByRole("button", { name: "Publish for 24 hours" })).toBeVisible();
+  const { data: generated } = await owner.client.from("challenge_generations").select("prompt").eq("challenge_id", id).single();
+  expect(generated?.prompt.user).toContain("Image description: A template's visible scene.");
+  expect(generated?.prompt.user).toContain("Joke context: None supplied.");
+  expect(JSON.stringify(generated?.prompt)).not.toContain("Human answer not shared");
+  const { data: record } = await owner.client.from("challenges").select("review_submission").eq("id", id).single();
+  if (!record) throw new Error("Reviewed challenge missing");
+  const args = { p_owner: owner.id, p_image_id: null, p_template: templates![0].id, p_description: "Scene", p_context: "", p_caption: "Caption", p_confirmed: true, p_manual: false, p_submission: record.review_submission };
+  expect((await accounts.admin.rpc("create_reviewed_challenge", args)).data).toBe(id);
+  expect((await owner.client.rpc("create_reviewed_challenge", args)).error).toBeTruthy();
+  expect((await other.client.rpc("reserve_challenge_image", { p_owner: owner.id, p_hash: "a".repeat(64) })).error).toBeTruthy();
+  const { randomUUID } = await import("node:crypto");
+  expect((await accounts.admin.rpc("create_reviewed_challenge", { ...args, p_submission: randomUUID(), p_confirmed: false })).error).toBeTruthy();
+  expect((await accounts.admin.rpc("create_reviewed_challenge", { ...args, p_submission: randomUUID(), p_description: " " })).error).toBeTruthy();
+  const { data: image } = await accounts.admin.rpc("reserve_challenge_image", { p_owner: owner.id, p_hash: "a".repeat(64) });
+  expect((await accounts.admin.rpc("create_reviewed_challenge", { ...args, p_owner: other.id, p_image_id: image.id, p_template: null, p_submission: randomUUID() })).error).toBeTruthy();
+  const reservations = await Promise.all(Array.from({ length: 12 }, (_, i) => accounts.admin.rpc("reserve_challenge_image", { p_owner: owner.id, p_hash: (i + 1).toString(16).padStart(64, "0") })));
+  expect(reservations.filter(r => !r.error)).toHaveLength(9); // One image was already reserved.
+});
+
+test("an image with failed analysis can be manually described and used without another provider call", async ({ page, accounts }) => {
+  const owner = await accounts.create();
+  const { createHash } = await import("node:crypto");
+  const input = await sharp({ create: { width: 16, height: 16, channels: 3, background: "#ffe01b" } }).png().toBuffer();
+  const normalized = await sharp(input).rotate().resize(1600, 1600, { fit: "inside", withoutEnlargement: true }).jpeg({ quality: 85 }).toBuffer();
+  const { data: image, error } = await accounts.admin.rpc("reserve_challenge_image", { p_owner: owner.id, p_hash: createHash("sha256").update(normalized).digest("hex") });
+  expect(error).toBeNull();
+  expect((await accounts.admin.storage.from("challenge-images").upload(image.storage_path, normalized, { contentType: "image/jpeg" })).error).toBeNull();
+  expect((await accounts.admin.from("challenge_images").update({ upload_ready: true, description_status: "failed" }).eq("id", image.id)).error).toBeNull();
+  await login(page, owner);
+  await page.goto("/challenges/new");
+  await page.getByLabel("Challenge image").setInputFiles({ name: "manual.png", mimeType: "image/png", buffer: input });
+  await expect(page.getByText("A description could not be suggested. Write your own to continue.")).toBeVisible();
+  await page.getByLabel("Image description", { exact: true }).fill("A yellow square.");
+  await page.getByLabel("I confirm this image description").check();
+  await page.getByLabel("Your caption").fill("A square deal.");
+  await page.getByRole("button", { name: "Create draft", exact: true }).click();
+  await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
+  const { data: saved } = await owner.client.from("challenge_images").select("*").single();
+  expect(saved.id).toBe(image.id);
+  expect(saved.suggested_description).toBeNull();
+  expect(saved.description_source).toBe("manual");
+  expect(saved.description_started_at).toBeNull();
 });

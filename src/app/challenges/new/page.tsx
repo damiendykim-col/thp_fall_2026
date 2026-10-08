@@ -2,6 +2,8 @@ import SiteHeader from "@/components/site-header";
 import { requireUser } from "@/lib/auth";
 import { getImages } from "@/lib/images";
 import ChallengeForm from "./challenge-form";
+export const maxDuration = 60;
+
 export default async function NewChallengePage() {
   await requireUser();
   const templates = await getImages();

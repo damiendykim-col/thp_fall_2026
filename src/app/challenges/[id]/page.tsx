@@ -20,7 +20,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ id: 
   }
   return <><SiteHeader /><main className="page-shell account-page"><Link href="/challenges">← Challenges</Link><h1>{challenge.status === "published" ? "Caption challenge" : "Your challenge draft"}</h1><p className="account-intro">{challenge.situation}</p>
     {/* eslint-disable-next-line @next/next/no-img-element */}
-    {image ? <img className="challenge-image" src={image} alt={challenge.situation} /> : <p>Image unavailable. Refresh to try again.</p>}
+    {image ? <img className="challenge-image" src={image} alt={challenge.image_description || challenge.situation} /> : <p>Image unavailable. Refresh to try again.</p>}
     <ChallengePanel challenge={challenge} />
   </main></>;
 }

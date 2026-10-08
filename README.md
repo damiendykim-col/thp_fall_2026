@@ -6,7 +6,7 @@ The app uses a minimal black theme with yellow accents and deploys to Vercel.
 
 ## What you can do
 
-- **Challenges:** upload an image or choose a template, write a caption, generate an AI opponent, and publish a 24-hour challenge. Each account gets one active upvote per challenge, with the ability to undo or switch it before closing. Creators cannot vote on their own challenges. Caption order varies by viewer; authorship and totals stay hidden until the deadline.
+- **Challenges:** upload an image or choose a template, review its description, add optional joke context, write a caption, generate an AI opponent, and publish a 24-hour challenge. Each account gets one active upvote per challenge, with the ability to undo or switch it before closing. Creators cannot vote on their own challenges. Caption order varies by viewer; authorship and totals stay hidden until the deadline.
 - **Images:** browse completed challenge winners with Human-written or AI-generated caption labels. Ties and rounds without votes do not produce winners. The separate Templates view retains cards, list, table, sorting, and an expanded image viewer.
 - **Profile:** edit your name and favorite joke, upload a profile photo (including GIFs), or restore a previous photo. Text drafts survive navigation, and changed fields show unsaved edits.
 - **Members:** browse profile photos and favorite jokes without exposing members' names or email addresses. Your own card links to profile editing.
@@ -64,17 +64,19 @@ Mock generation does not verify live Gemini availability or quality. Google OAut
 - **Google Gemini:** caption generation on the server. Generation attempts record their prompts, model, settings, and image reference.
 - **Vercel:** hosting and Speed Insights.
 
+Uploaded images have reusable, owner-private description records; each challenge preserves its confirmed description and optional joke context separately. See [reviewed image descriptions](docs/image-descriptions.md) for provenance and deployment.
+
 Private identity lives in `profiles`; member-facing content lives in `member_profiles`, with photo history in `profile_photos`. Challenge records, captions, votes, and generation attempts are stored separately. Winners are derived from closed results rather than copied into another gallery table.
 
 RLS and database functions enforce ownership, voting limits, deadlines, and visibility. Raw challenge captions intentionally have no direct client access: scoped RPCs return the fields a viewer may see, keeping AI attribution and vote totals hidden during an open challenge. Server admin credentials are reserved for privileged upload and generation operations.
 
-New challenge uploads accept still JPEG, PNG, and WebP images up to 2 MB and are normalized before storage. Uploaded images are sent to the model; gallery templates, including GIFs, use the supplied scene description instead of frame analysis. See [Stage 1 setup and limits](docs/design/01-stage-1-setup.md) for generation quotas and operational details.
+New challenge uploads accept still JPEG, PNG, and WebP images up to 2 MB and are normalized before storage. Uploaded images are sent to the model; gallery templates, including GIFs, use the confirmed image description and optional context instead of frame analysis. See [Stage 1 setup and limits](docs/design/01-stage-1-setup.md) for generation quotas and operational details.
 
 ## Hosted setup and deployment
 
 The local workflow above is the quickest way to explore the app. To use a hosted Supabase project and real Gemini generation:
 
-1. Follow the [Auth and profile setup](docs/assignment-3-setup.md), [profile schema rollout](docs/profile-schema-rollout.md), [caption challenge setup](docs/design/01-stage-1-setup.md), and [winners migration](docs/winners-gallery.md), in that order. For an existing database, check which migrations and manual cutover steps are already applied before running SQL. A Vercel deployment does **not** apply database migrations.
+1. Follow the [Auth and profile setup](docs/assignment-3-setup.md), [profile schema rollout](docs/profile-schema-rollout.md), [caption challenge setup](docs/design/01-stage-1-setup.md), [winners migration](docs/winners-gallery.md), and [image-description migration](docs/image-descriptions.md), in that order. For an existing database, check which migrations and manual cutover steps are already applied before running SQL. A Vercel deployment does **not** apply database migrations.
 2. Configure the deployment environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: browser-safe Supabase connection settings.
    - `SUPABASE_SECRET_KEY` **or** `SUPABASE_SERVICE_ROLE_KEY`: server-only administrative access.
