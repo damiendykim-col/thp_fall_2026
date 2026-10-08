@@ -57,8 +57,11 @@ Production builds reject this path even if the flag is accidentally set. Missing
 or false flags also disable it. The action checks again even when called directly.
 Password authentication creates a **real Supabase session**; route checks,
 signup/email triggers, RLS, Storage policies and the save RPC all remain active.
-The app does not receive a service-role key. Only test fixtures use the local admin
-key to provision disposable accounts and clean up their own uploads/accounts.
+The local app server receives the isolated project's service-role key for challenge
+uploads and generation writes; that key is not exposed to the browser. Test fixtures
+also use the local admin key to provision disposable accounts and clean up their
+own uploads/accounts. The runner overrides hosted credentials and uses deterministic
+mock captions, so no real Gemini key is needed.
 
 Do not set the flag for your normal hosted backend; the guard intentionally rejects
 it. Google consent and Google's own OAuth redirects still need occasional manual
@@ -75,6 +78,9 @@ but do not represent Google provider behavior.
 - GIF upload through Storage, previous-photo selection and persistence.
 - Two-user current-avatar visibility and restrictions on identity/history reads.
 - Rejected cross-user photo selection, anonymous directory reads and direct writes.
+- Challenge upload, mock generation, publication, blind voting, undo/switch, and timed reveal.
+- Generation claim exclusivity, retries, and rejection of forged or cross-user writes.
+- Winner eligibility, attribution after closing, and anonymous access restrictions.
 
 Every authenticated test creates unique accounts. Fixture teardown removes only
 those users' files, then deletes those accounts (database cascades remove rows).

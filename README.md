@@ -1,53 +1,97 @@
 # Meme Club
 
-A Next.js image gallery for Assignment #2. Both `/` and `/images` render rows from the Supabase `images` table. The gallery supports newest/oldest sorting, an expanded image viewer (Escape to close, arrow keys to navigate), and optional descriptions.
+A humor app built with Next.js, Supabase, and Google Gemini for Columbia's course project. Create a caption challenge, pit your own caption against AI, and let other members decide which is funnier—without revealing who wrote each caption until voting closes.
 
-## Local development
+The app uses a minimal black theme with yellow accents and deploys to Vercel.
 
-1. Run `npm install`.
-2. Copy `.env.example` to `.env.local` and supply your Supabase project URL and publishable key.
-3. Run `npm run dev` and open http://localhost:3000/images.
+## What you can do
 
-`.env.local` is ignored by Git. The publishable key is the modern equivalent of Supabase's legacy anon key. Never use a secret or service-role key for these variables.
+- **Challenges:** upload an image or choose a template, write a caption, generate an AI opponent, and publish a 24-hour challenge. Each account gets one active upvote per challenge, with the ability to undo or switch it before closing. Creators cannot vote on their own challenges. Caption order varies by viewer; authorship and totals stay hidden until the deadline.
+- **Images:** browse completed challenge winners with Human-written or AI-generated caption labels. Ties and rounds without votes do not produce winners. The separate Templates view retains cards, list, table, sorting, and an expanded image viewer.
+- **Profile:** edit your name and favorite joke, upload a profile photo (including GIFs), or restore a previous photo. Text drafts survive navigation, and changed fields show unsaved edits.
+- **Members:** browse profile photos and favorite jokes without exposing members' names or email addresses. Your own card links to profile editing.
 
-## Supabase data
+Templates are public. Challenges, winners, and profile editing require sign-in. The Members page also requires a completed first and last name. Production sign-in uses Google OAuth.
 
-The `public.images` table has four columns:
+## Run locally without external credentials
 
-- `id`: UUID primary key, default `gen_random_uuid()`.
-- `image_url`: Text containing a direct, public image URL.
-- `description`: Optional text; empty values are supported.
-- `created_at`: Timestamp with time zone, default `now()`.
+Use **Node.js 22** and **Docker**. Start Docker, then run:
 
-The project uses RLS with a SELECT policy for `anon` and `authenticated`, plus SELECT table privileges for those roles. Add records in the Supabase dashboard. Image files belong in a public Storage bucket; use `/storage/v1/object/public/...` URLs rather than dashboard previews or expiring signed links.
+```sh
+npm ci
+npm run e2e:setup
+npm run e2e:account
+npm run e2e:dev
+```
 
-The server queries Supabase on each page request, so newly added records appear on refresh without redeployment. Fetching uses the publishable key and respects RLS. Google sign-in, private profiles, and profile photo uploads are supported. Voting and gallery uploads are outside this version's scope.
+Open [127.0.0.1:3100/login](http://127.0.0.1:3100/login) and sign in with the local-only credentials printed by `e2e:account`.
 
-## Checks
+This workflow starts an isolated Supabase instance, applies the schema, seeds gallery templates, and uses deterministic mock AI captions. It needs no Google OAuth client or Gemini API key and does not use the hosted course database. Auth sessions, database triggers, RLS, and Storage are real.
 
-- `npm run lint`
-- `npm test -- --runInBand`
-- `npm run build`
-- `npm run test:e2e` (after local Supabase setup; see below)
+The local sign-in flag only works in development against loopback Supabase, outside Vercel. It replaces the Google sign-in step for testing; it does not bypass authorization.
 
-## Vercel
+- `npm run e2e:stop` stops the containers and retains local data.
+- `npm run e2e:reset` **erases the isolated local database** and rebuilds it.
 
-Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in the Vercel project's environment variables for the environments you deploy to. Commit and push the code to the connected GitHub repository, then deploy/redeploy. Verify `/images` on the deployment displays the records and opens images correctly.
+See [local development and E2E testing](docs/e2e.md) for ports, isolation, troubleshooting, and test-account behavior.
 
-## Assignment 3
+## Tests and checks
 
-See [the setup guide](docs/assignment-3-setup.md) for the SQL migration, Google OAuth client configuration, exact callback URLs, and end-to-end verification. `/profile` requires sign-in; `/members` also requires both profile names. The gallery remains public.
+```sh
+npm run lint
+npm test -- --runInBand
+npm run build
+```
 
+For browser tests, install Chromium once, start the local stack, and run Playwright:
 
-## End-to-end tests and local test login
+```sh
+npx playwright install chromium
+npm run e2e:setup
+npm run test:e2e
+```
 
-See [the E2E guide](docs/e2e.md) for isolated Supabase setup, Playwright, and CI.
-With Docker running, use `npm run e2e:setup` then `npm run test:e2e`.
-For manual testing without Google, run `npm run e2e:account` and `npm run e2e:dev`.
-The server-only `E2E_AUTH_ENABLED` flag works only in development with local
-Supabase; it is rejected in production and never bypasses session or RLS checks.
+Stop `e2e:dev` first: Playwright starts its own server on port 3100 and deliberately refuses to reuse an existing one. `npm run test:e2e:ui` opens the interactive runner.
 
-## Caption challenges (Assignment 4)
+Jest covers application logic and components. Playwright exercises real local Auth, database, and Storage flows, including profile privacy, photo history, challenge generation, reversible voting, timed reveals, and winner eligibility. GitHub Actions runs the unit and E2E suites on pull requests and pushes to `main`.
 
-See [Stage 1 setup](docs/design/01-stage-1-setup.md) for the hosted SQL migration,
-server-only Gemini configuration, test workflow and current limits.
+Mock generation does not verify live Gemini availability or quality. Google OAuth also needs a manual deployment smoke test.
+
+## Architecture and access control
+
+- **Next.js App Router and TypeScript:** pages, server actions, and server-side provider calls.
+- **Supabase Auth, Postgres, and Storage:** Google sessions, persistent content, and uploaded media.
+- **Google Gemini:** caption generation on the server. Generation attempts record their prompts, model, settings, and image reference.
+- **Vercel:** hosting and Speed Insights.
+
+Private identity lives in `profiles`; member-facing content lives in `member_profiles`, with photo history in `profile_photos`. Challenge records, captions, votes, and generation attempts are stored separately. Winners are derived from closed results rather than copied into another gallery table.
+
+RLS and database functions enforce ownership, voting limits, deadlines, and visibility. Raw challenge captions intentionally have no direct client access: scoped RPCs return the fields a viewer may see, keeping AI attribution and vote totals hidden during an open challenge. Server admin credentials are reserved for privileged upload and generation operations.
+
+New challenge uploads accept still JPEG, PNG, and WebP images up to 2 MB and are normalized before storage. Uploaded images are sent to the model; gallery templates, including GIFs, use the supplied scene description instead of frame analysis. See [Stage 1 setup and limits](docs/design/01-stage-1-setup.md) for generation quotas and operational details.
+
+## Hosted setup and deployment
+
+The local workflow above is the quickest way to explore the app. To use a hosted Supabase project and real Gemini generation:
+
+1. Follow the [Auth and profile setup](docs/assignment-3-setup.md), [profile schema rollout](docs/profile-schema-rollout.md), [caption challenge setup](docs/design/01-stage-1-setup.md), and [winners migration](docs/winners-gallery.md), in that order. For an existing database, check which migrations and manual cutover steps are already applied before running SQL. A Vercel deployment does **not** apply database migrations.
+2. Configure the deployment environment variables:
+   - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: browser-safe Supabase connection settings.
+   - `SUPABASE_SECRET_KEY` **or** `SUPABASE_SERVICE_ROLE_KEY`: server-only administrative access.
+   - `GEMINI_API_KEY`: server-only Gemini credentials.
+   - Optional `GEMINI_MODEL` and `LLM_PROVIDER`: provider configuration documented in the Stage 1 guide.
+3. Enable Google in Supabase with your Google OAuth client. Google's authorized redirect points to Supabase's `/auth/v1/callback`; Supabase's redirect allowlist must include your app's exact `/auth/callback` URL for each origin you use.
+4. Deploy through the connected GitHub/Vercel project. Set environment variables for the relevant Preview and Production environments, then verify sign-in, profile editing, generation, publication, and voting with separate accounts.
+
+Never prefix Gemini or Supabase administrative keys with `NEXT_PUBLIC_`, commit them, or expose them to the browser. Keep `E2E_AUTH_ENABLED` disabled in hosted environments.
+
+For ordinary development against a configured backend, `.env.example` lists the settings: copy it to the Git-ignored `.env.local`, supply the required values, and use `npm run dev` on port 3000. Prefer the isolated workflow for tests that create accounts or uploads.
+
+## Further reading
+
+- [Design stages](docs/design/README.md): challenge design and future taste profiles / interactive Members graph. Those later stages are planned, not implemented.
+- [E2E guide](docs/e2e.md): local setup, test login, browser coverage, and CI.
+- [Profile schema rollout](docs/profile-schema-rollout.md): identity separation and migration verification.
+- [Stage 1 setup](docs/design/01-stage-1-setup.md): AI configuration, storage, quotas, and current limits.
+- [Winners gallery](docs/winners-gallery.md): eligibility, visibility, and deployment.
+- [Performance notes](docs/performance.md): caching, request timing, and instrumentation.
