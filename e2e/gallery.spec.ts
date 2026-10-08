@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test("public gallery switches layouts and sorts in both directions", async ({ page }) => {
-  await page.goto("/images");
+  await page.goto("/images?view=templates");
   await expect(page.getByRole("heading", { name: "Images", exact: true })).toBeVisible();
   await expect(page.locator(".image-grid img").first()).toHaveAttribute("alt", "Newer test meme");
   await page.getByRole("button", { name: "Oldest first", exact: true }).click();

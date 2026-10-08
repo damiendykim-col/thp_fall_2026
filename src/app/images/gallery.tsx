@@ -16,7 +16,7 @@ function formatDate(value: string) {
   return Number.isNaN(date.getTime()) ? "Unknown date" : date.toISOString().slice(0, 16).replace("T", " ");
 }
 
-export default function Gallery({ images }: { images: GalleryImage[] }) {
+export default function Gallery({ images, embedded = false }: { images: GalleryImage[]; embedded?: boolean }) {
   const [view, setView] = useState<"cards" | "list" | "table">("cards");
   const [sort, setSort] = useState<"newest" | "oldest">("newest");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export default function Gallery({ images }: { images: GalleryImage[] }) {
   }
   return <>
     <div className="feed-toolbar">
-      <div className="feed-title"><h1>Images</h1><span className="count">{images.length} {images.length === 1 ? "image" : "images"}</span></div>
+      <div className="feed-title">{embedded ? <h2>Templates</h2> : <h1>Images</h1>}<span className="count">{images.length} {images.length === 1 ? "image" : "images"}</span></div>
       <div className="feed-controls">
         <div className="view-switch" role="group" aria-label="Image layout">
           {(["cards", "list", "table"] as const).map((layout) => <button key={layout} aria-pressed={view === layout} onClick={() => setView(layout)}>{layout[0].toUpperCase() + layout.slice(1)}</button>)}

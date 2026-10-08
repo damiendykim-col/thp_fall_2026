@@ -10,11 +10,13 @@ export default function ChallengePanel({ challenge: c }: { challenge: Challenge 
   const [remaining, setRemaining] = useState("");
   useEffect(() => {
     if (!c.closes_at || c.closed) return;
-    let refreshed = false;
+    let lastRefresh: number | null = null;
     const tick = () => {
       const left = new Date(c.closes_at!).getTime()-Date.now();
       setRemaining(left>0 ? `${Math.floor(left/3600000)}h ${Math.floor(left%3600000/60000)}m remaining` : "Voting is closing…");
-      if (left<=0 && !refreshed) { refreshed=true; router.refresh(); }
+      // Browser and database clocks can differ. Retry gently until the server
+      // confirms closure; a single early refresh must not strand the reveal.
+      if (left<=0 && (lastRefresh===null || Date.now()-lastRefresh>=5000)) { lastRefresh=Date.now(); router.refresh(); }
     };
     const visible = () => { if (document.visibilityState === "visible") router.refresh(); };
     tick(); const timer=setInterval(tick,1000);

@@ -173,3 +173,20 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .challenge-form input[type="file"] { height: auto; line-height: 1.6; }
 .challenge-form input::file-selector-button { margin-right: 1rem; padding: .5rem; background: #252525; color: #eee; border: 0; }
 .challenge-form :focus-visible { border-color: var(--accent); }
+
+.images-page { padding-top: 28px; padding-bottom: 40px; }
+.images-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.image-collections { display: flex; gap: 24px; margin: 24px 0; border-bottom: 1px solid var(--border); }
+.image-collections a { color: var(--muted); padding: 0 0 12px; text-decoration: none; border-bottom: 2px solid transparent; }
+.image-collections [aria-current="page"] { color: var(--accent); border-color: var(--accent); }
+.winners-intro { margin: 0 0 24px; font-size: 14px; line-height: 1.6; }
+.winners-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,300px),1fr)); gap: 24px; list-style: none; padding: 0; }
+.winner-card { min-width: 0; overflow: hidden; border: 1px solid var(--border); border-radius: 6px; background: #0c0c0c; }
+.winner-image { background: #111; aspect-ratio: 4 / 3; display: grid; place-items: center; }
+.winner-image img { height: 100%; width: 100%; object-fit: contain; min-height: 0; }
+.winner-content { padding: 20px; }
+.winner-caption { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.6; margin: 0 0 16px; }
+.caption-attribution { display: inline-block; font-size: 12px; color: var(--accent); border: 1px solid #514900; border-radius: 4px; padding: 4px 8px; }
+.winner-result { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0 12px; font-size: 13px; }
+.winner-content a { font-size: 13px; text-underline-offset: 4px; }
+.winner-content a:hover { color: var(--accent); }

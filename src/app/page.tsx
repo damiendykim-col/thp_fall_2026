@@ -16,5 +16,5 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     if (error) callback.set("error", error);
     redirect(`/auth/callback?${callback}`);
   }
-  return <ImagesPage />;
+  return <ImagesPage searchParams={Promise.resolve(params)} />;
 }

@@ -46,7 +46,7 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   expect((await voter.client.from("challenge_votes").select("*").eq("challenge_id",id)).data).toHaveLength(1);
   // Only test admin can advance the deadline; the client cannot modify publication.
   expect((await voter.client.from("challenges").update({closes_at:new Date().toISOString()}).eq("id",id)).error).toBeTruthy();
-  const { error } = await accounts.admin.from("challenges").update({closes_at:new Date(Date.now()-1000).toISOString()}).eq("id",id);
+  const { error } = await accounts.admin.from("challenges").update({closes_at:"2000-01-01T00:00:00.000Z"}).eq("id",id);
   expect(error).toBeNull();
   await page.reload();
   await expect(page.getByText("AI caption", {exact:true})).toBeVisible();
