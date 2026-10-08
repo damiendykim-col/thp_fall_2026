@@ -106,7 +106,9 @@ Reference: [Playwright fixtures](https://playwright.dev/docs/test-fixtures),
 [Supabase local development](https://supabase.com/docs/guides/local-development/cli/getting-started).
 
 
-## Validation record
+## Historical validation record
+
+This dated snapshot is not the current test count or CI status.
 
 October 5, 2026: all 6 Chromium E2E tests passed against the isolated local
 Supabase stack (24 seconds). All 65 Jest tests and ESLint passed. This exercised

@@ -1,5 +1,13 @@
 # Investigating navigation latency
 
+## Current status
+
+The project owner reports that performance is satisfactory for the current scope.
+This investigation is closed unless a new regression warrants measurement. The
+records below preserve the investigation and proposed checks; they are not an
+outstanding execution checklist. No new benchmark or numeric speedup is claimed.
+Historical image-cache observations do not establish current hosted headers.
+
 ## Baseline: October 2, 2026
 
 The supplied Vercel export has 32 log records representing 16 requests, with a middleware and a function record for each. One `/members.rsc` function took 926 ms. Initial home-page functions took 631 ms and 1,451 ms on two different hostnames. Other function records took 9–50 ms; many were RSC requests clustered at the same second and may be prefetches rather than completed navigations. Middleware took 7–571 ms. Do not treat these as 16 measured user clicks or simply add all durations to estimate browser latency.

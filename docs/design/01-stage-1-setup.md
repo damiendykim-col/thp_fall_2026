@@ -1,5 +1,9 @@
 # Stage 1 implementation and deployment
 
+Current status: the project owner reports production validation and performance
+satisfactory. Deployment steps below are reference instructions for future setups,
+not a request to replay already-applied migrations.
+
 Implemented: authenticated Challenges, upload/template drafts, server-side Gemini
 caption generation, explicit publication, one reversible upvote per voter/challenge,
 24-hour deadline, and server-enforced attribution/results reveal. Members stays separate.

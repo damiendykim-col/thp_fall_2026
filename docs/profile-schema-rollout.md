@@ -1,15 +1,14 @@
 # Profile schema and RLS rollout
 
-Updated October 2, 2026. User-supplied post-cleanup verification confirms the
+The October 2, 2026 user-supplied post-cleanup verification confirms the
 normalized schema, permanent identity trigger, expected function/table grants,
 enabled RLS and zero identity/eligibility mismatches. Legacy objects are gone.
-The user reported the cutover app working before cleanup. Post-cleanup profile
-saving and fresh Google signup still need confirmation. No remote changes were
-performed by the agent.
+The project owner subsequently confirmed UI validation and reports production
+validation satisfactory. No new remote audit was performed for this status update.
 
 **Database cleanup verified. Do not rerun migration 003 or the manual cleanup.**
-Next: smoke-test saving a profile, uploading/restoring a photo, and fresh signup.
-The rollout sequence below is retained as an execution record, not a rerun request.
+The rollout sequence and dated pending checks below are historical execution
+records, not outstanding tasks or requests to rerun migrations.
 
 ## Rollout sequence (historical)
 

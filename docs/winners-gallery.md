@@ -1,5 +1,9 @@
 # Winners gallery
 
+Current status: the project owner reports production validation and performance
+satisfactory. Deployment steps below are reference instructions for future setups,
+not a request to replay already-applied migrations.
+
 Images now defaults to **Winners**, with the existing Cards/List/Table gallery under
 **Templates**. Winning cards pair the original image with its winning caption,
 label that caption Human-written or AI-generated, and link to the source results.
