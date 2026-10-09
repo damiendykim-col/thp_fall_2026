@@ -67,3 +67,18 @@ allowlisted challenge destination, including through profile completion.
 Honeycomb discovery (watch-style app tiles), swipe interactions, PvPvE, taste
 profiles, and the member graph are deferred. The current work focuses on a clear
 entry point, familiar navigation, and the existing two-caption competition.
+
+## Description presentation and deferred GIF work (October 9)
+
+Challenge feed cards no longer use visual descriptions as headlines. Optional joke
+context may appear; the image description remains available as image alternative
+text and generation input. Creation puts description editing and its existing
+explicit confirmation inside “Review image understanding,” with a visible review
+status and a reminder before submission. Joke context remains outside that section.
+
+GIF uploads remain deferred. Before implementing them, evaluate animation-aware
+analysis and its limitations (motion, timing, and unsampled frames), user-facing
+AI limitations disclosure, and a higher file-size limit together with decoded-pixel,
+frame-count, processing-time, Storage, and request limits. No new upload limit or
+GIF support is introduced by this UI revision. Existing GIF templates still use
+text descriptions for AI generation, as disclosed in the creation form.

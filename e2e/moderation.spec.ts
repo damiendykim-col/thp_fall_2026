@@ -8,6 +8,7 @@ test("blocked text and unavailable checks leave an editable form and never creat
   await page.getByLabel("Image source", { exact: true }).selectOption("template");
   const { data: images } = await owner.client.from("images").select("id").limit(1);
   await page.getByLabel("Gallery template", { exact: true }).selectOption(images![0].id);
+  await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("Image description", { exact: true }).fill("A surprised cartoon character.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByLabel("Your caption").fill("[[test:block]]");
@@ -59,6 +60,7 @@ test("publication cannot bypass moderation, and hidden reports disappear from re
   expect((await accounts.admin.from("moderators").insert({ user_id: moderator.id })).error).toBeNull();
   await page.getByText("Account", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/login$/);
   await login(page, moderator);
   await page.goto("/moderation");
   await expect(page.getByText("Moderation fixture", { exact: true })).toBeVisible();
@@ -83,6 +85,7 @@ test("template visual review is moderator-only and can be completed from the que
   await page.goto("/challenges/new");
   await page.getByLabel("Image source", { exact: true }).selectOption("template");
   await page.getByLabel("Gallery template", { exact: true }).selectOption(id);
+  await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("Image description", { exact: true }).fill("A scene.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByLabel("Your caption").fill("A caption.");
@@ -128,6 +131,7 @@ test("moderators can dismiss reports and creators can withdraw their own publish
   expect((await reporter.client.rpc("read_caption_challenge", { p_challenge: id })).data).not.toBeNull();
   await page.getByText("Account", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/login$/);
   await login(page, owner);
   await page.goto(`/challenges/${id}`);
   await page.getByText("Manage visibility", { exact: true }).click();

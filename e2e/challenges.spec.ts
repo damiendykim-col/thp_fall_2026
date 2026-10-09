@@ -7,6 +7,7 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   await login(page, owner);
   await page.goto("/challenges/new");
   await page.getByLabel("Challenge image").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: await sharp({create:{width:16,height:16,channels:3,background:"#ffe01b"}}).png().toBuffer() });
+  await page.getByText("Review image understanding", { exact: true }).click();
   await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
   await page.getByLabel("Your caption").fill("My syllabus has entered its villain era.");
   await expect(page.getByRole("button", { name: "Create draft", exact: true })).toBeDisabled();
@@ -39,6 +40,13 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   expect((await owner.client.from("challenge_generations").select("provider,prompt").eq("challenge_id",id)).data?.[0].provider).toBe("mock");
   await page.getByRole("button", { name: "Publish for 24 hours" }).click();
   await expect(page.getByText("This is your challenge. Creators cannot vote.")).toBeVisible();
+  await page.goto("/challenges");
+  const card = page.locator(`.challenge-feed-card[href="/challenges/${id}"]`);
+  await expect(card.getByRole("img")).toHaveAttribute("alt", "A yellow square fills the image.");
+  await expect(card.getByText("A yellow square fills the image.", { exact: true })).toHaveCount(0);
+  await expect(card.getByRole("heading")).toHaveText("When the midterm is tomorrow and the weekend was yesterday.");
+  await card.click();
+  await expect(page).toHaveURL(new RegExp(`/challenges/${id}$`));
   const { data: blind } = await voter.client.rpc("read_caption_challenge", { p_challenge: id });
   expect(blind.captions).toHaveLength(2);
   for (const caption of blind.captions) { expect(caption.origin).toBeNull(); expect(caption.votes).toBeNull(); }
@@ -46,6 +54,7 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   expect((await voter.client.storage.from("challenge-images").createSignedUrl(draft.image_path,60)).error).toBeNull();
   await page.getByText("Account", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/login$/);
   await login(page, voter);
   await page.goto(`/challenges/${id}`);
   await page.getByRole("button", { name: "Upvote", exact: true }).first().click();
@@ -127,6 +136,7 @@ test("image review preserves the AI original, supports edits/replacement and reu
   for (const mode of ["edited", "replaced"]) {
     await page.goto("/challenges/new");
     await page.getByLabel("Challenge image").setInputFiles({ name: "review.png", mimeType: "image/png", buffer });
+    await page.getByText("Review image understanding", { exact: true }).click();
     await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
     await page.getByLabel("I confirm this image description").check();
     if (mode === "replaced") await page.getByRole("button", { name: "Write my own description" }).click();
@@ -160,6 +170,7 @@ test("template descriptions need confirmation and review RPCs enforce identity a
   await page.getByLabel("Image source").selectOption("template");
   const { data: templates } = await owner.client.from("images").select("id").limit(1);
   await page.getByLabel("Gallery template").selectOption(templates![0].id);
+  await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("Image description", { exact: true }).fill("A template's visible scene.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByLabel("Your caption").fill("Human answer not shared with Gemini.");
@@ -200,6 +211,7 @@ test("an image with failed analysis can be manually described and used without a
   await page.goto("/challenges/new");
   await page.getByLabel("Challenge image").setInputFiles({ name: "manual.png", mimeType: "image/png", buffer: input });
   await expect(page.getByText("A description could not be suggested. Write your own to continue.")).toBeVisible();
+  await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("Image description", { exact: true }).fill("A yellow square.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByLabel("Your caption").fill("A square deal.");

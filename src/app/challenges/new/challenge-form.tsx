@@ -112,18 +112,24 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
       <input type="hidden" name="imageId" value={source === "upload" ? imageId : ""} />
       <input type="hidden" name="submission" value={submission} />
       <input type="hidden" name="manual" value={String(manual)} />
-      <label>Image description
-        <textarea aria-label="Image description" name="description" value={description} disabled={Boolean(imageStatus) || pending || !ready} onChange={e => { setDescription(e.target.value); setConfirmed(false); }} required maxLength={500} placeholder="Describe what is visibly in the image, rather than inventing a situation." />
-      </label>
-      {suggestion && <>
-        <p className="muted">AI suggestion—check the visual details. You can edit it or replace it.</p>
-        <button className="button" type="button" disabled={pending} onClick={() => { setManual(true); setDescription(""); setConfirmed(false); }}>Write my own description</button>
-        {manual && <button className="button" type="button" disabled={pending} onClick={() => { setManual(false); setDescription(suggestion); setConfirmed(false); }}>Use AI suggestion</button>}
-      </>}
-      <label className="description-confirmation">
-        <input type="checkbox" name="confirmed" checked={confirmed} disabled={!ready || !description.trim() || Boolean(imageStatus) || pending} onChange={e => setConfirmed(e.target.checked)} required />
-        I confirm this image description
-      </label>
+      <details className="image-understanding">
+        <summary><span>Review image understanding</span><span className="review-status">{!ready ? "Choose an image first" : imageStatus ? "Analyzing…" : confirmed ? "Confirmed" : "Confirmation needed"}</span></summary>
+        <div className="image-understanding-fields">
+          <p className="muted">This description helps the AI understand the scene. Check it once, then focus on your joke.</p>
+          <label>Image description
+            <textarea aria-label="Image description" name="description" value={description} disabled={Boolean(imageStatus) || pending || !ready} onChange={e => { setDescription(e.target.value); setConfirmed(false); }} required maxLength={500} placeholder="Describe what is visibly in the image, rather than inventing a situation." />
+          </label>
+          {suggestion && <>
+            <p className="muted">AI suggestion—check the visual details. You can edit it or replace it.</p>
+            <button className="button" type="button" disabled={pending} onClick={() => { setManual(true); setDescription(""); setConfirmed(false); }}>Write my own description</button>
+            {manual && <button className="button" type="button" disabled={pending} onClick={() => { setManual(false); setDescription(suggestion); setConfirmed(false); }}>Use AI suggestion</button>}
+          </>}
+          <label className="description-confirmation">
+            <input type="checkbox" name="confirmed" checked={confirmed} disabled={!ready || !description.trim() || Boolean(imageStatus) || pending} onChange={e => setConfirmed(e.target.checked)} required />
+            I confirm this image description
+          </label>
+        </div>
+      </details>
       <label>Add context for the joke (optional)
         <textarea name="context" value={context} onChange={e => setContext(e.target.value)} maxLength={500} placeholder="For example: finding out the assignment was a group project." />
       </label>
@@ -133,6 +139,7 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
       <p className="muted">The confirmed description and optional joke context accompany the image when generating your opponent. Your caption is sent separately to Gemini for safety checking, but never to the opponent-caption generator.</p>
       <p className="muted">Publish only images you have permission to share. Challenges are visible to signed-in users; attribution and results appear after 24 hours. Descriptions and context are frozen when you create the draft.</p>
       {state.error && <p role="alert">{state.error}</p>}
+      {ready && !confirmed && !imageStatus && <p className="field-help">Open “Review image understanding” above and confirm the scene to enable Create draft.</p>}
       <button className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed || !caption.trim()}>{pending ? "Saving draft…" : "Create draft"}</button>
     </form>
   );

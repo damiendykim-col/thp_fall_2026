@@ -18,7 +18,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
     const winners = await getChallengeWinners(supabase).catch(() => null);
     content = winners ? <><Winners winners={winners} /><CompletedRounds /></> : <p role="alert">Results couldn’t be loaded. Please refresh to try again.</p>;
   } else {
-    let query = supabase.from('challenges').select('id,situation,image_description,image_path,template_url,status,closes_at,hidden_at').order('created_at', { ascending: false }).limit(50);
+    let query = supabase.from('challenges').select('id,situation,joke_context,image_description,image_path,template_url,status,closes_at,hidden_at').order('created_at', { ascending: false }).limit(50);
     query = selected === 'yours' ? query.eq('creator_id', user.id) : query.eq('status', 'published').is('hidden_at', null).gt('closes_at', new Date().toISOString());
     const { data, error } = await query;
     const paths = [...new Set((data ?? []).flatMap(c => c.image_path ? [c.image_path as string] : []))];
@@ -37,7 +37,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
           {image ? <img src={image} alt={c.image_description || c.situation} loading="lazy" /> : <span className="muted">Image unavailable</span>}
         </div>
         <div className="challenge-feed-content"><span className="eyebrow">{c.hidden_at ? 'Hidden' : c.status !== 'published' ? `Your ${c.status}` : closed ? 'Results ready' : 'Voting open'}</span>
-          <h2>{c.situation}</h2>
+          {c.joke_context && <h2>{c.joke_context}</h2>}
           {c.closes_at && !c.hidden_at && <p className="muted">{closed ? 'Closed' : 'Closes'} <time dateTime={c.closes_at}>{new Date(c.closes_at).toUTCString()}</time></p>}
           <span className="challenge-card-action">{c.hidden_at ? 'View your challenge' : c.status !== 'published' ? 'Continue your draft' : closed ? 'See the reveal' : 'Pick the funnier caption'} →</span>
         </div>

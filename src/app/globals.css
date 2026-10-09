@@ -240,3 +240,11 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .completed-rounds a:hover { color: var(--accent); }
 @media (max-width: 760px) { .challenge-demo { grid-template-columns: 1fr; } .demo-image img { max-height: 260px; } .demo-content { padding: 22px; } }
 @media (max-width: 600px) { .account-nav { gap: 12px; } .account-nav > .nav-link:first-child { display: none; } .account-nav > .button { font-size: 12px; padding: 9px; } .challenge-home { padding-top: 32px; } }
+
+.image-understanding { border: 1px solid var(--border); border-radius: 6px; }
+.image-understanding summary { cursor: pointer; padding: 16px; line-height: 1.5; }
+.image-understanding summary > span:first-child { margin-left: 6px; }
+.review-status { display: inline-block; margin-left: 14px; color: var(--accent); font-size: 12px; }
+.image-understanding-fields { display: grid; gap: 16px; padding: 0 16px 18px; }
+.image-understanding-fields > p { font-size: 13px; line-height: 1.6; }
+@media (max-width: 600px) { .review-status { display: block; margin-left: 22px; margin-top: 6px; } }
