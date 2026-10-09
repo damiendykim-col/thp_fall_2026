@@ -57,6 +57,7 @@ test("publication cannot bypass moderation, and hidden reports disappear from re
   expect((await voter.client.from("challenge_reports").select("id")).data).toHaveLength(1);
   expect((await owner.client.from("challenge_reports").select("id")).data).toEqual([]);
   expect((await accounts.admin.from("moderators").insert({ user_id: moderator.id })).error).toBeNull();
+  await page.getByText("Account", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await login(page, moderator);
   await page.goto("/moderation");
@@ -125,6 +126,7 @@ test("moderators can dismiss reports and creators can withdraw their own publish
   await page.getByRole("button", { name: "Dismiss report" }).click();
   await expect(page.getByText("No open reports.")).toBeVisible();
   expect((await reporter.client.rpc("read_caption_challenge", { p_challenge: id })).data).not.toBeNull();
+  await page.getByText("Account", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await login(page, owner);
   await page.goto(`/challenges/${id}`);

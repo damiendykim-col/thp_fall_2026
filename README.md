@@ -7,9 +7,11 @@ The app uses a minimal black theme with yellow accents and deploys to Vercel.
 ## What you can do
 
 - **Challenges:** upload an image or choose a template, review its description, add optional joke context, write a caption, generate an AI opponent, and publish a 24-hour challenge. Each account gets one active upvote per challenge, with the ability to undo or switch it before closing. Creators cannot vote on their own challenges. Caption order varies by viewer; authorship and totals stay hidden until the deadline.
-- **Images:** browse completed challenge winners with Human-written or AI-generated caption labels. Ties and rounds without votes do not produce winners. The separate Templates view retains cards, list, table, sorting, and an expanded image viewer.
+- **Home:** signed-out visitors can try an illustrative caption choice without recording a vote. Signed-in users browse Open / Results / Yours, with image-led challenge cards.
+- **Results:** browse winners with Human-written or AI-generated labels, plus all finished rounds including ties and rounds without votes. Templates live in challenge creation; the legacy gallery remains at `/images?view=templates`.
+- **Account menu:** open Profile, sign out, or access Moderation if provisioned as a moderator.
 - **Profile:** edit your name and favorite joke, upload a profile photo (including GIFs), or restore a previous photo. Text drafts survive navigation, and changed fields show unsaved edits.
-- **Members:** browse profile photos and favorite jokes without exposing members' names or email addresses. Your own card links to profile editing.
+- **Members (legacy route, outside primary navigation):** browse profile photos and favorite jokes without exposing members' names or email addresses. Your own card links to profile editing.
 
 Templates are public. Challenges, winners, and profile editing require sign-in. The Members page also requires a completed first and last name. Production sign-in uses Google OAuth.
 

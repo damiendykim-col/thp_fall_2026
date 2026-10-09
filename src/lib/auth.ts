@@ -1,12 +1,13 @@
+import { authDestination } from "./auth-destination";
 import { redirect } from "next/navigation";
 import { createAuthClient } from "./supabase/server";
 import { isProfileComplete, type Profile } from "./profile";
 import { measureOperation } from "./performance";
 
-export async function requireUser() {
+export async function requireUser(destination?: string) {
   const supabase = await createAuthClient();
   const { data: { user }, error } = await measureOperation("page.auth", () => supabase.auth.getUser());
-  if (error || !user) redirect("/login");
+  if (error || !user) redirect(destination ? `/login?next=${encodeURIComponent(authDestination(destination))}` : "/login");
   return { supabase, user };
 }
 

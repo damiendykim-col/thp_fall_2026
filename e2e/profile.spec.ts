@@ -12,8 +12,9 @@ test("signup triggers, onboarding, session persistence and sign-out", async ({ p
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByText("Complete your profile by adding your first and last name.")).toBeVisible();
   await completeProfile(page);
-  await page.getByRole("link", { name: "Continue to members" }).click();
-  await expect(page).toHaveURL(/\/members$/);
+  await page.getByRole("link", { name: "Continue to challenges" }).click();
+  await expect(page).toHaveURL(/\/challenges$/);
+  await page.goto("/members");
   await expect(page.getByText("A SQL query walks into a bar.", { exact: true })).toBeVisible();
   await expect(page.getByText("PrivateFirst", { exact: true })).toHaveCount(0);
   await expect(page.getByText(account.email, { exact: true })).toHaveCount(0);
@@ -23,6 +24,7 @@ test("signup triggers, onboarding, session persistence and sign-out", async ({ p
   await page.goto("/members");
   await page.reload();
   await expect(page).toHaveURL(/\/members$/);
+  await page.getByText("Account", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto("/profile");
@@ -35,7 +37,10 @@ test("text drafts survive navigation, show edited cues, and can be discarded", a
   const joke = page.getByRole("textbox", { name: "Favorite joke", exact: true });
   await joke.fill("Unsaved joke");
   await expect(joke).toHaveClass(/input-changed/);
-  await page.getByRole("link", { name: "Images", exact: true }).click();
+  await page.getByRole("link", { name: "Challenges", exact: true }).click();
+  await expect(page).toHaveURL(/\/challenges$/);
+  await expect(page.getByRole("heading", { name: "Let the captions compete." })).toBeVisible();
+  await page.getByText("Account", { exact: true }).click();
   await page.getByRole("link", { name: "Profile", exact: true }).click();
   await expect(joke).toHaveValue("Unsaved joke");
   // Client navigation can retain the mounted form; reload exercises sessionStorage recovery.

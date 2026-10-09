@@ -7,8 +7,8 @@ import { readDraft, writeDraft, type ProfileDraft } from "@/lib/profile-draft";
 import { saveProfile, type ProfileResult } from "./actions";
 
 type PreviousPhoto = { avatarPath: string; createdAt: string; url: string };
-export default function ProfileForm({ profile, avatarUrl, previousPhotos }: {
-  profile: Profile; avatarUrl: string | null; previousPhotos: PreviousPhoto[];
+export default function ProfileForm({ profile, avatarUrl, previousPhotos, destination = "/challenges" }: {
+  profile: Profile; avatarUrl: string | null; previousPhotos: PreviousPhoto[]; destination?: string;
 }) {
   const initial = (): ProfileDraft => ({ first: profile.first_name ?? "", last: profile.last_name ?? "", joke: profile.favorite_joke ?? "", previous: "", needsFile: false });
   const [draft, setDraft] = useState(initial);
@@ -102,7 +102,7 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos }: {
       <p className="field-help" id="favorite-joke-help">Optional. Up to {MAX_FAVORITE_JOKE_CHARS} characters. Your joke is visible to other members. We may use it to improve personalized joke suggestions and generation.</p>
       {notice && <p role="status">{notice}</p>}
       {result.error && <p role="alert">{result.error}</p>}
-      {result.success && !dirty && <p role="status">Profile saved. <Link className="confirmation-link" href="/members">Continue to members</Link></p>}
+      {result.success && !dirty && <p role="status">Profile saved. <Link className="confirmation-link" href={destination}>Continue to challenges</Link></p>}
       <div className="profile-actions">
         <button className={`button ${dirty ? "save-changed" : ""}`} type="submit" disabled={pending}>{pending ? "Saving…" : "Save profile"}</button>
         {dirty && <button className="button" type="button" onClick={() => {

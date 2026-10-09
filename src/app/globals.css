@@ -197,3 +197,46 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .challenge-safety { margin-top: 2rem; }
 .challenge-safety summary { cursor: pointer; color: var(--accent); }
 .challenge-safety select { display: block; margin: .75rem 0; padding: .7rem; max-width: 100%; background: #111; color: #eee; border: 1px solid #444; }
+
+/* Challenge-first navigation and discovery. */
+.account-menu { position: relative; font-size: 13px; }
+.account-menu summary { cursor: pointer; color: var(--foreground); padding: 10px 0; }
+.account-menu-items { position: absolute; right: 0; top: 100%; min-width: 170px; padding: 8px; display: grid; gap: 4px; background: #111; border: 1px solid var(--border); border-radius: 6px; z-index: 20; box-shadow: 0 10px 30px #000; }
+.account-menu-items a, .account-menu-items button { display: block; width: 100%; text-align: left; padding: 12px; text-decoration: none; }
+.account-menu-items a:hover { color: var(--accent); background: #202020; }
+.challenge-home { padding-block: 48px 72px; }
+.challenge-hero { margin-bottom: 32px; max-width: 760px; }
+.eyebrow { display: block; color: var(--accent); font-size: 12px; letter-spacing: .05em; margin-bottom: 12px; }
+.challenge-hero h1 { font-size: clamp(28px, 4vw, 44px); font-weight: 600; letter-spacing: -1.3px; line-height: 1.12; }
+.challenge-hero p { color: #b5b5b5; font-size: 16px; line-height: 1.65; margin: 18px 0 0; }
+.challenge-demo { display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; border: 1px solid var(--border); border-radius: 10px; background: #0b0b0b; }
+.demo-image { display: grid; place-items: center; background: #171717; }
+.demo-image img { width: 100%; height: auto; }
+.demo-content { padding: 30px; }
+.demo-content h2 { font-size: 23px; }
+.demo-content > p { line-height: 1.6; font-size: 14px; }
+.demo-caption { display: grid; gap: 10px; text-align: left; width: 100%; margin-top: 14px; padding: 16px; border: 1px solid #383838; border-radius: 6px; background: #111; line-height: 1.5; }
+.demo-caption > span { color: var(--muted); font-size: 12px; }
+.demo-caption > strong { font-size: 12px; font-weight: 400; color: var(--accent); }
+.demo-caption:hover, .demo-caption.selected { border-color: var(--accent); }
+.demo-note { min-height: 44px; color: var(--muted); margin: 16px 0; }
+.guest-note { color: var(--muted); font-size: 13px; line-height: 1.6; margin-top: 20px; }
+.challenge-feed { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 24px; }
+.challenge-feed-card { display: block; height: 100%; text-decoration: none; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: #0b0b0b; }
+.challenge-feed-card:hover { border-color: #726500; }
+.challenge-feed-image { aspect-ratio: 4 / 3; background: #151515; display: grid; place-items: center; overflow: hidden; }
+.challenge-feed-image img { width: 100%; height: 100%; object-fit: contain; min-height: 0; }
+.challenge-feed-content { padding: 22px; }
+.challenge-feed-content h2 { font-size: 18px; line-height: 1.5; overflow-wrap: anywhere; }
+.challenge-feed-content p { font-size: 12px; line-height: 1.6; }
+.challenge-card-action { display: block; color: var(--accent); font-size: 13px; margin-top: 20px; }
+.empty-challenges { padding: 46px 0; }
+.empty-challenges h2 { font-size: 24px; }
+.empty-challenges p { color: var(--muted); line-height: 1.7; }
+.empty-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+.completed-rounds { margin-top: 40px; border-top: 1px solid var(--border); padding-top: 28px; }
+.completed-rounds ul { list-style: none; padding: 0; }
+.completed-rounds a { display: block; padding: 16px 0; border-bottom: 1px solid var(--border); text-decoration: none; line-height: 1.6; }
+.completed-rounds a:hover { color: var(--accent); }
+@media (max-width: 760px) { .challenge-demo { grid-template-columns: 1fr; } .demo-image img { max-height: 260px; } .demo-content { padding: 22px; } }
+@media (max-width: 600px) { .account-nav { gap: 12px; } .account-nav > .nav-link:first-child { display: none; } .account-nav > .button { font-size: 12px; padding: 9px; } .challenge-home { padding-top: 32px; } }

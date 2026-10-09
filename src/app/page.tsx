@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import ImagesPage from "./images/page";
+import ChallengesPage from "./challenges/page";
 
 type Search = Record<string, string | string[] | undefined>;
 
@@ -16,5 +16,5 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     if (error) callback.set("error", error);
     redirect(`/auth/callback?${callback}`);
   }
-  return <ImagesPage searchParams={Promise.resolve(params)} />;
+  return <ChallengesPage searchParams={Promise.resolve({ view: typeof params.view === "string" ? params.view : undefined })} />;
 }

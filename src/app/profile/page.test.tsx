@@ -41,7 +41,7 @@ beforeEach(() => {
   } as unknown as Awaited<ReturnType<typeof requireUser>>);
 });
 it("combines private identity with current presentation and the owned photo collection", async () => {
-  render(await ProfilePage());
+  render(await ProfilePage({}));
   expect(screen.getByTestId("editor")).toHaveTextContent("New table joke / 1 photos");
   expect(selectProfile).toHaveBeenCalledWith("id, first_name, last_name, member_profiles(current_avatar_path, favorite_joke)");
   expect(from).toHaveBeenCalledWith("profile_photos");
@@ -49,12 +49,12 @@ it("combines private identity with current presentation and the owned photo coll
 });
 it("fails visibly if the signup trigger did not create the presentation row", async () => {
   read.mockResolvedValue({ data: { id: "owner", first_name: null, last_name: null, member_profiles: null }, error: null });
-  render(await ProfilePage());
+  render(await ProfilePage({}));
   expect(screen.getByRole("alert")).toHaveTextContent("couldn’t be loaded");
   expect(screen.queryByTestId("editor")).not.toBeInTheDocument();
 });
 it("retains the editor when the optional photo collection fails to load", async () => {
   history.mockResolvedValue({ data: null, error: { message: "Failed" } });
-  render(await ProfilePage());
+  render(await ProfilePage({}));
   expect(screen.getByTestId("editor")).toHaveTextContent("New table joke / 0 photos");
 });

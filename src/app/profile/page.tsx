@@ -1,3 +1,4 @@
+import { authDestination } from "@/lib/auth-destination";
 import SiteHeader from "@/components/site-header";
 import { requireUser } from "@/lib/auth";
 import { isProfileComplete } from "@/lib/profile";
@@ -5,7 +6,8 @@ import { measureOperation } from "@/lib/performance";
 import { signAvatars } from "@/lib/avatars";
 import ProfileForm from "./profile-form";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: { searchParams?: Promise<{ next?: string }> }) {
+  const destination = authDestination((await searchParams)?.next);
   const { supabase, user } = await requireUser();
   const [{ data: profile, error }, history] = await Promise.all([
     measureOperation("profile.read", () => supabase.from("profiles")
@@ -37,7 +39,7 @@ export default async function ProfilePage() {
     <p className="account-intro">{user.email}</p>
     {error || !formProfile ? <div role="alert"><p>Your profile couldn’t be loaded. Please try again.</p><a className="button" href="/profile">Reload profile</a></div> : <>
       {!isProfileComplete(formProfile) && <p className="completion-notice">Complete your profile by adding your first and last name.</p>}
-      <ProfileForm key={formProfile.id} profile={formProfile} avatarUrl={avatarUrl} previousPhotos={previousPhotos} />
+      <ProfileForm key={formProfile.id} profile={formProfile} avatarUrl={avatarUrl} previousPhotos={previousPhotos} destination={destination} />
     </>}
   </main></>;
 }

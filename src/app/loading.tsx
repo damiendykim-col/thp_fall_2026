@@ -1,1 +1,1 @@
-export { default } from "./images/loading";
+export { default } from "./challenges/loading";

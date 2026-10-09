@@ -44,6 +44,7 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   for (const caption of blind.captions) { expect(caption.origin).toBeNull(); expect(caption.votes).toBeNull(); }
   expect((await owner.client.rpc("vote_caption_challenge", { p_challenge:id,p_caption:blind.captions[0].id })).error).toBeTruthy();
   expect((await voter.client.storage.from("challenge-images").createSignedUrl(draft.image_path,60)).error).toBeNull();
+  await page.getByText("Account", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();
   await login(page, voter);
   await page.goto(`/challenges/${id}`);

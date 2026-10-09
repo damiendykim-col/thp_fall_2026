@@ -22,8 +22,8 @@ those representations for discovery. Stage 1 must work without Stages 2 or 3.
 
 ## Product boundaries
 
-- **Images:** completed challenge winners plus a public template library.
-- **Challenges:** a separate creation, voting and results experience.
+- **Challenges:** home, open rounds, results, personal drafts, and creation.
+- **Templates:** part of creation, with a legacy gallery route retained.
 - **Members:** member discovery, eventually through a graph. It does not become
   the challenge feed.
 - **Profile:** private identity editing, avatar history and favorite joke.
@@ -47,3 +47,23 @@ Stage 2 taxonomy, privacy, confidence and similarity-model decisions. Pagination
 and automated abandoned-upload cleanup remain deferred. A first
 [challenge moderation and reporting workflow](../moderation.md) is implemented
 locally and requires deployment.
+
+## Challenge-first UI revision (October 8)
+
+The home route now presents challenges. Signed-in navigation is Open / Results /
+Yours, with creation in the header and Profile / Sign out / role-specific Moderation
+in an account menu. Results combines winning captions with links to all finished
+rounds, including ties and rounds without votes. Templates are selected inside
+creation; `/images?view=templates` remains a compatibility route for earlier course
+work. `/images` redirects to challenge Results. Members remains accessible by its
+existing route but is no longer primary navigation.
+
+Signed-out visitors currently see a clearly labeled interactive example with no
+recorded votes. The project owner approved this signed-out default. Real challenges remain
+members-only; this revision does not change upload audiences or database policies.
+OAuth retains exactly `/auth/callback`; a short-lived HTTP-only cookie carries an
+allowlisted challenge destination, including through profile completion.
+
+Honeycomb discovery (watch-style app tiles), swipe interactions, PvPvE, taste
+profiles, and the member graph are deferred. The current work focuses on a clear
+entry point, familiar navigation, and the existing two-caption competition.

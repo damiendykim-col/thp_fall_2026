@@ -27,12 +27,12 @@ test("only closed, unique winners appear with correct attribution and original c
   expect((await accounts.anonymous.rpc("list_challenge_winners")).error).toBeTruthy();
   await login(page,voter);
   await page.goto("/images");
-  await expect(page.getByRole("link",{name:"Winners",exact:true})).toHaveAttribute("aria-current","page");
+  await expect(page.getByRole("link",{name:"Results",exact:true})).toHaveAttribute("aria-current","page");
   await expect(page.getByText("human challenge human caption",{exact:true})).toBeVisible();
   await expect(page.getByText("ai challenge ai caption",{exact:true})).toBeVisible();
   await expect(page.getByText("Human-written",{exact:true})).toBeVisible();
   await expect(page.getByText("AI-generated",{exact:true})).toBeVisible();
-  await page.locator(`a[href="/challenges/${ids.human}"]`).click();
+  await page.locator(`a[href="/challenges/${ids.human}"]`).first().click();
   await expect(page).toHaveURL(new RegExp(`/challenges/${ids.human}$`));
   await page.goto("/images?view=templates");
   await expect(page.getByRole("group",{name:"Image layout"})).toBeVisible();
@@ -40,7 +40,8 @@ test("only closed, unique winners appear with correct attribution and original c
 
 test("anonymous visitors can browse templates but winners keep the challenge audience", async ({page}) => {
   await page.goto("/images");
-  await expect(page.getByText("Sign in to browse winning captions.")).toBeVisible();
-  await page.getByRole("link",{name:"Templates",exact:true}).click();
+  await expect(page).toHaveURL(/\/challenges\?view=results$/);
+  await expect(page.getByRole("region", {name:"Example challenge"})).toBeVisible();
+  await page.goto("/images?view=templates");
   await expect(page.locator(".image-grid img")).toHaveCount(2);
 });

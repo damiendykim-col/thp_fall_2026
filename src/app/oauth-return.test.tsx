@@ -2,7 +2,7 @@
 import HomePage from "./page";
 import { redirect } from "next/navigation";
 jest.mock("next/navigation", () => ({ redirect: jest.fn(() => { throw new Error("redirect"); }) }));
-jest.mock("./images/page", () => ({ __esModule: true, default: () => null }));
+jest.mock("./challenges/page", () => ({ __esModule: true, default: () => null }));
 const go = jest.mocked(redirect);
 beforeEach(() => jest.clearAllMocks());
 
@@ -14,7 +14,7 @@ test("an OAuth error returned to the site root reaches the error handler without
   await expect(HomePage({ searchParams: Promise.resolve({error:"access_denied",error_description:"private provider detail"}) })).rejects.toThrow("redirect");
   expect(go).toHaveBeenCalledWith("/auth/callback?error=access_denied");
 });
-test("ordinary home visits still render the gallery", async () => {
+test("ordinary home visits render challenges", async () => {
   await HomePage({searchParams:Promise.resolve({})});
   expect(go).not.toHaveBeenCalled();
 });

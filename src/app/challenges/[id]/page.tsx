@@ -7,9 +7,9 @@ import SafetyControls from "./safety-controls";
 import ChallengePanel from "./panel";
 export const maxDuration = 120;
 export default async function ChallengePage({ params }: { params: Promise<{ id: string }> }) {
-  const { supabase } = await requireUser();
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
+  const { supabase } = await requireUser(`/challenges/${id}`);
   const { data, error } = await supabase.rpc("read_caption_challenge", { p_challenge: id });
   if (error) throw new Error("Unable to load challenge.");
   if (!data) notFound();

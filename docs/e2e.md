@@ -76,7 +76,9 @@ but do not represent Google provider behavior.
 
 ## Coverage and isolation
 
-- Public gallery sorting, all layouts, image dialog.
+- Signed-out example interaction, mobile layout, simplified navigation, and account-menu access.
+- Safe challenge return destinations through sign-in and profile completion, without automatic votes.
+- Legacy public gallery sorting, all layouts, image dialog.
 - Anonymous profile/member route redirects.
 - New user rows, nullable names and incomplete-profile onboarding.
 - Save, directory privacy, session persistence and sign-out.

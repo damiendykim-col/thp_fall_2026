@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Meme Club",
-  description: "Image gallery.",
+  description: "Can you out-caption AI? Vote on blind caption challenges and discover the results.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
