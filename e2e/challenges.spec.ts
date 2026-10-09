@@ -29,6 +29,11 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   const { data: draft } = await owner.client.rpc("read_caption_challenge", { p_challenge: id });
   expect((await voter.client.storage.from("challenge-images").createSignedUrl(draft.image_path,60)).error).toBeTruthy();
   await page.getByRole("button", { name: "Generate AI opponent" }).click();
+  // Wait for either outcome, then surface the actual alert instead of timing
+  // out on a publish button that cannot appear after a generation failure.
+  const generationError = page.getByRole("main").getByRole("alert");
+  await expect(page.getByRole("button", { name: "Publish for 24 hours" }).or(generationError)).toBeVisible();
+  expect(await generationError.allTextContents(), "Generation returned an error").toEqual([]);
   await expect(page.getByRole("button", { name: "Publish for 24 hours" })).toBeVisible();
   expect((await voter.client.from("challenge_generations").select("*").eq("challenge_id",id)).data).toEqual([]);
   expect((await owner.client.from("challenge_generations").select("provider,prompt").eq("challenge_id",id)).data?.[0].provider).toBe("mock");
@@ -92,7 +97,7 @@ test("generation claims are exclusive, failed attempts retry, and successful dra
   expect(error).toBeNull();
   const args={p_owner:owner.id,p_challenge:id,p_provider:"mock",p_model:"test",p_prompt:{user:"scene"}};
   const claims=await Promise.all([accounts.admin.rpc("claim_caption_generation",args),accounts.admin.rpc("claim_caption_generation",args)]);
-  expect(claims.filter(x=>!x.error)).toHaveLength(1);
+  expect(claims.filter(x=>!x.error), JSON.stringify(claims.map(x=>x.error))).toHaveLength(1);
   const request=claims.find(x=>!x.error)!.data;
   expect((await accounts.admin.rpc("finish_caption_generation",{p_request:request,p_caption:null})).error).toBeNull();
   const {data:retry,error:retryError}=await accounts.admin.rpc("claim_caption_generation",args);

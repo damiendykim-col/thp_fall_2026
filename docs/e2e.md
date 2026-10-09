@@ -21,6 +21,12 @@ table and two deterministic gallery fixtures. No mock Supabase API is used.
 The cleanup copy affects only this disposable local database; it does not rerun
 cleanup remotely. Setup downloads Supabase's containers on its first run.
 
+Setup fails on CLI errors and checks Auth health, the two seeded REST images,
+and required Storage buckets before writing `env.json`. Failed setup removes
+stale credentials. Readiness probes require successful responses; 401/404 do
+not count as healthy. Run their tests with
+`node --test scripts/e2e-readiness.test.mjs`.
+
 A startup probe checks the local API and seeded gallery before browser tests run.
 The runner starts its own dev server, refuses to reuse a server already on port
 3100, and overrides the public Supabase environment variables. Its Next build
@@ -102,6 +108,13 @@ build remains a separate validation step.
 requests. It requires no Supabase secrets or Google credentials. Failure artifacts
 may include local test sessions and passwords: they are ignored by Git and CI
 retains reports for seven days. Never put production sessions in those artifacts.
+
+CI retries backend setup up to three times, stopping the local stack between
+attempts with bounded backoff for transient image-pull failures. It never retries
+the Playwright tests or proceeds after exhausted setup attempts. A healthy backend
+does not establish RPC correctness: generation claims and publication are still
+tested against the real migrated database. Replay migrations with `e2e:reset`
+when validating migration changes locally, so cached schema state cannot mask errors.
 
 Reference: [Playwright fixtures](https://playwright.dev/docs/test-fixtures),
 [Playwright web server](https://playwright.dev/docs/test-webserver),

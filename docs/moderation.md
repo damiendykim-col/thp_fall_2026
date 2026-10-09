@@ -94,7 +94,10 @@ Template rejection/removal from the public gallery remains an operator task.
 
 1. Apply [202610080001_image_descriptions.sql](../supabase/migrations/202610080001_image_descriptions.sql)
    if it is not already applied, then
-   [202610080002_challenge_moderation.sql](../supabase/migrations/202610080002_challenge_moderation.sql).
+   [202610080002_challenge_moderation.sql](../supabase/migrations/202610080002_challenge_moderation.sql),
+   followed by [202610080003_fix_generation_quota.sql](../supabase/migrations/202610080003_fix_generation_quota.sql).
+   The correction is required even if moderation is already deployed: it repairs
+   a generation quota query that referenced the wrong timestamp column.
 2. In the Supabase SQL editor, grant your existing account moderator membership using
    its UUID from Auth → Users (never a browser-provided role or user metadata):
 

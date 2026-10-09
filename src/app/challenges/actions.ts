@@ -62,7 +62,13 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
       challenge.image_path, challenge.image_description ?? undefined,
     );
     const { data, error: claimError } = await admin.rpc("claim_caption_generation", { p_owner: user.id, p_challenge: id, p_provider: config.provider, p_model: config.model, p_prompt: prompt });
-    if (claimError) return { error: "Generation is already running, complete, or at its limit. Interrupted requests can be retried after two minutes." };
+    if (claimError) {
+      // Log the operation and SQLSTATE only, never prompts or provider payloads.
+      console.error("claim_caption_generation failed", { code: claimError.code });
+      return { error: claimError.code === "P0001"
+        ? "Generation is already running, complete, or at its limit. Interrupted requests can be retried after two minutes."
+        : "Generation could not start because of a backend error. Please try again later." };
+    }
     request = data;
     const caption = await generateCaption(config, prompt, bytes);
     const aiCheck = await ensureModerated(user.id, "ai", humanReviewText(
@@ -70,7 +76,10 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
       challenge.image_description ? challenge.joke_context || "" : "", caption,
     ), bytes);
     const { error: saveError } = await admin.rpc("finish_caption_generation", { p_request: request, p_caption: caption });
-    if (saveError) throw new Error("The caption could not be saved. Please retry.");
+    if (saveError) {
+      console.error("finish_caption_generation failed", { code: saveError.code });
+      throw new Error("The caption could not be saved. Please retry.");
+    }
     const { error: approvalError } = await admin.from("challenges").update({ ai_moderation_id: aiCheck }).eq("id", id).eq("creator_id", user.id);
     if (approvalError) throw new Error("The safety result could not be saved. Please retry publication.");
     revalidatePath(`/challenges/${id}`);

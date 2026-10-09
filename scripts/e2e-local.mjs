@@ -1,8 +1,9 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, copyFileSync, readdirSync, writeFileSync, readFileSync } from "node:fs";
+import { mkdirSync, copyFileSync, readdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { waitForBackend } from "./e2e-readiness.mjs";
 
 const root = resolve(import.meta.dirname, "..");
 const workdir = resolve(root, "e2e/.runtime");
@@ -19,6 +20,8 @@ function load() {
   return env;
 }
 if (command === "start") {
+  // A failed setup must not leave credentials that look ready to the runner.
+  rmSync(resolve(workdir, "env.json"), { force: true });
   mkdirSync(resolve(workdir, "supabase/migrations"), { recursive: true });
   copyFileSync(resolve(root, "e2e/supabase.config.toml"), resolve(workdir, "supabase/config.toml"));
   copyFileSync(resolve(root, "e2e/images.sql"), resolve(workdir, "supabase/migrations/202609240001_images.sql"));
@@ -33,9 +36,11 @@ if (command === "start") {
   run(["migration", "up", "--local"], true);
   const status = JSON.parse(run(["status", "-o", "json"], true));
   if (status.API_URL !== "http://127.0.0.1:55421") throw new Error("Unexpected local API URL.");
-  writeFileSync(resolve(workdir, "env.json"), JSON.stringify({
+  const env = {
     url: status.API_URL, anonKey: status.ANON_KEY, serviceKey: status.SERVICE_ROLE_KEY,
-  }, null, 2), { mode: 0o600 });
+  };
+  await waitForBackend(env);
+  writeFileSync(resolve(workdir, "env.json"), JSON.stringify(env, null, 2), { mode: 0o600 });
   console.log("Isolated Supabase ready. Run npm run test:e2e.");
 } else if (command === "reset") {
   // Fixed workdir and --local: never linked/remote, never the user's primary database.
