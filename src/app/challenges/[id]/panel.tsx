@@ -34,7 +34,7 @@ export default function ChallengePanel({ challenge: c }: { challenge: Challenge 
   const winner=c.closed && total>0 && c.captions.length===2 && c.captions[0].votes!==c.captions[1].votes ? c.captions.reduce((a,b)=>(a.votes??0)>(b.votes??0)?a:b).origin : null;
   return <section className="challenge-panel" aria-busy={pending}>
     {published ? <p>{c.closed ? "Voting closed. Attribution revealed." : `${remaining} · Labels and totals stay hidden until closing.`}{c.closes_at && <> <time dateTime={c.closes_at}>{new Date(c.closes_at).toUTCString()}</time></>}</p> : <p>Your preview shows attribution. Other members won’t see it until voting closes.</p>}
-    {c.own && published && !c.closed && <p className="muted">This is your challenge. Creators cannot vote.</p>}
+    {c.own && published && !c.closed && <div><p>Your challenge · Waiting for the community’s votes.</p><p className="muted">Creators can’t vote on their own challenge.</p></div>}
     <div className="caption-options">{c.captions.map((caption,i)=><article className={`caption-option ${c.vote===caption.id?"selected":""}`} key={caption.id}>
       <span className="muted">{caption.origin ? caption.origin==="ai"?"AI caption":"Human caption" : `Caption ${i+1}`}</span><p>{caption.body}</p>
       {c.closed ? <strong>{caption.votes} upvotes</strong> : published && !c.own ? <button className="button" disabled={pending} aria-pressed={c.vote===caption.id} onClick={()=>run(()=>voteChallenge(c.id,c.vote===caption.id?null:caption.id))}>{c.vote===caption.id?"Undo upvote":"Upvote"}</button> : null}

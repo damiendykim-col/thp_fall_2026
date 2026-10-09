@@ -82,3 +82,14 @@ AI limitations disclosure, and a higher file-size limit together with decoded-pi
 frame-count, processing-time, Storage, and request limits. No new upload limit or
 GIF support is introduced by this UI revision. Existing GIF templates still use
 text descriptions for AI generation, as disclosed in the creation form.
+
+## Participation cues (October 9)
+
+Feed cards mark the viewer's rounds with “Yours” and their active ballots with
+“Voted.” Open-round actions become “View your challenge” or “Review your vote”
+accordingly. Voted cards remain accessible for switching or undoing votes.
+Within the latest 50 open rounds, unvoted challenges come first, then voted rounds,
+then the viewer's own rounds; each group retains newest-first order. The Yours
+filter retains its existing order. Sorting runs when loading the feed, without
+moving cards during voting. Only the viewer's own ballots are queried; attribution
+and totals remain hidden until closing.

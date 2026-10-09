@@ -18,17 +18,27 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
     const winners = await getChallengeWinners(supabase).catch(() => null);
     content = winners ? <><Winners winners={winners} /><CompletedRounds /></> : <p role="alert">Results couldn’t be loaded. Please refresh to try again.</p>;
   } else {
-    let query = supabase.from('challenges').select('id,situation,joke_context,image_description,image_path,template_url,status,closes_at,hidden_at').order('created_at', { ascending: false }).limit(50);
+    let query = supabase.from('challenges').select('id,creator_id,situation,joke_context,image_description,image_path,template_url,status,closes_at,hidden_at').order('created_at', { ascending: false }).limit(50);
     query = selected === 'yours' ? query.eq('creator_id', user.id) : query.eq('status', 'published').is('hidden_at', null).gt('closes_at', new Date().toISOString());
     const { data, error } = await query;
+    // Read only this viewer's ballots; no counts or caption attribution leave the database.
+    const { data: votes, error: voteError } = data?.length && selected === 'open'
+      ? await supabase.from('challenge_votes').select('challenge_id').eq('user_id', user.id).in('challenge_id', data.map(c => c.id))
+      : { data: [], error: null };
+    const voted = new Set((votes ?? []).map(v => v.challenge_id));
+    const priority = (c: { id: string; creator_id: string }) => c.creator_id === user.id ? 2 : voted.has(c.id) ? 1 : 0;
+    // Stable sorting preserves newest-first within each group. Reorder only on feed loads.
+    const cards = selected === 'open' ? [...(data ?? [])].sort((a, b) => priority(a) - priority(b)) : data;
     const paths = [...new Set((data ?? []).flatMap(c => c.image_path ? [c.image_path as string] : []))];
     const urls = paths.length ? (await supabase.storage.from('challenge-images').createSignedUrls(paths, 3600)).data : [];
     const signed = new Map((urls ?? []).flatMap(item => item.path && item.signedUrl && !item.error ? [[item.path, item.signedUrl]] : []));
-    content = error ? <p role="alert">Challenges couldn’t be loaded. Please refresh to try again.</p> : !data?.length ? <section className="empty-challenges">
+    content = error || voteError ? <p role="alert">Challenges couldn’t be loaded. Please refresh to try again.</p> : !data?.length ? <section className="empty-challenges">
       <h2>{selected === 'yours' ? 'Your first challenger is waiting.' : 'No open rounds right now.'}</h2>
       <p>{selected === 'yours' ? 'Choose an image, write a caption, and take on AI.' : 'Explore the results, or start a new round with your own image.'}</p>
       <div className="empty-actions"><Link className="button button-primary" href="/challenges/new">Start a challenge</Link><Link className="button" href="/challenges?view=results">Explore results</Link></div>
-    </section> : <><ul className="challenge-feed">{data.map(c => {
+    </section> : <><ul className="challenge-feed">{cards!.map(c => {
+      const own = c.creator_id === user.id;
+      const hasVoted = voted.has(c.id);
       const image = c.image_path ? signed.get(c.image_path) : c.template_url;
       const closed = c.closes_at && new Date(c.closes_at).getTime() <= new Date().getTime();
       return <li key={c.id}><Link className="challenge-feed-card" href={`/challenges/${c.id}`}>
@@ -36,10 +46,10 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {image ? <img src={image} alt={c.image_description || c.situation} loading="lazy" /> : <span className="muted">Image unavailable</span>}
         </div>
-        <div className="challenge-feed-content"><span className="eyebrow">{c.hidden_at ? 'Hidden' : c.status !== 'published' ? `Your ${c.status}` : closed ? 'Results ready' : 'Voting open'}</span>
+        <div className="challenge-feed-content"><div className="challenge-card-status"><span className="eyebrow">{c.hidden_at ? 'Hidden' : c.status !== 'published' ? `Your ${c.status}` : closed ? 'Results ready' : 'Voting open'}</span>{own ? <span className="challenge-badge">Yours</span> : hasVoted ? <span className="challenge-badge"><span aria-hidden="true">✓ </span>Voted</span> : null}</div>
           {c.joke_context && <h2>{c.joke_context}</h2>}
           {c.closes_at && !c.hidden_at && <p className="muted">{closed ? 'Closed' : 'Closes'} <time dateTime={c.closes_at}>{new Date(c.closes_at).toUTCString()}</time></p>}
-          <span className="challenge-card-action">{c.hidden_at ? 'View your challenge' : c.status !== 'published' ? 'Continue your draft' : closed ? 'See the reveal' : 'Pick the funnier caption'} →</span>
+          <span className="challenge-card-action">{c.hidden_at ? 'View your challenge' : c.status !== 'published' ? 'Continue your draft' : closed ? 'See the reveal' : own ? 'View your challenge' : hasVoted ? 'Review your vote' : 'Pick the funnier caption'} →</span>
         </div>
       </Link></li>;
     })}</ul>{data.length === 50 && <p className="muted">Showing the latest 50 challenges.</p>}</>;
