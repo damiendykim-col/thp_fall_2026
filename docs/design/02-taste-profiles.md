@@ -1,7 +1,10 @@
 # Stage 2 — Semantic analysis and user taste profiles
 
-Status: next planned work is Stage 2A evaluation; implementation has not started.
-pgvector is enabled, but no embedding provider or dimensions have been selected.
+Status: Stage 2A pilot harness is implemented; no live embedding evaluation has run.
+pgvector is enabled. Gemini Embedding 2 is the pilot candidate, not a production
+selection; dimensions and schema remain undecided.
+See the [pilot guide](../../scripts/experiments/taste/README.md) for model roles,
+budget, test commands and human-review prerequisites.
 Depends on [closed caption challenges](01-caption-challenges.md).
 Feeds [Members graph](03-members-graph.md).
 

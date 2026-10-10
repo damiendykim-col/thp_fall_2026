@@ -1,0 +1,15 @@
+{
+  "judgmentsStatus": "proposed-not-human-reviewed",
+  "items": [
+    {"id":"finals-absurd","scene":"A student surrounded by books at midnight.","caption":"My syllabus has filed for custody of my weekends."},
+    {"id":"rent-absurd","scene":"A renter opening an expensive bill.","caption":"My rent has adopted my paycheck. I get supervised visits."},
+    {"id":"finals-observation","scene":"A student surrounded by books at midnight.","caption":"Finals week: when the library becomes your mailing address."},
+    {"id":"weather-absurd","scene":"A commuter standing in heavy rain.","caption":"The forecast has enrolled me in an unpaid swimming internship."},
+    {"id":"weather-observation","scene":"A commuter standing in heavy rain.","caption":"It only rains when I leave my umbrella at home."},
+    {"id":"finals-wordplay","scene":"A student surrounded by books at midnight.","caption":"I lost my concentration. It was a minor issue."}
+  ],
+  "comparisons": [
+    {"anchor":"finals-absurd","positive":"rent-absurd","negative":"finals-observation"},
+    {"anchor":"weather-absurd","positive":"finals-absurd","negative":"weather-observation"}
+  ]
+}
