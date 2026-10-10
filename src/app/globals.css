@@ -249,7 +249,9 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .image-understanding-fields > p { font-size: 13px; line-height: 1.6; }
 @media (max-width: 600px) { .review-status { display: block; margin-left: 22px; margin-top: 6px; } }
 
-.challenge-card-status { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.challenge-card-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.challenge-card-status .eyebrow { margin-bottom: 0; min-width: 0; }
+.challenge-card-status .challenge-badge { flex-shrink: 0; }
 .challenge-badge { display: inline-flex; gap: 4px; align-items: center; padding: 3px 9px; border: 1px solid #555; border-radius: 999px; color: #ddd; font-size: 12px; line-height: 1.5; }
 
 .gif-storyboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 10px; }

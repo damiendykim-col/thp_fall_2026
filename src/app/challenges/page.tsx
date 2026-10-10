@@ -5,6 +5,10 @@ import { getChallengeWinners } from "@/lib/challenges/winners";
 import Winners from "../images/winners";
 import ChallengeDemo from "./demo";
 
+const draftStatusLabels: Record<string, string> = {
+  draft: 'Draft', generating: 'Generating caption', failed: 'Generation failed', ready: 'Ready to publish',
+};
+
 export default async function ChallengesPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const supabase = await createAuthClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -46,7 +50,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {image ? <img src={image} alt={c.image_description || c.situation} loading="lazy" /> : <span className="muted">Image unavailable</span>}
         </div>
-        <div className="challenge-feed-content"><div className="challenge-card-status"><span className="eyebrow">{c.hidden_at ? 'Hidden' : c.status !== 'published' ? `Your ${c.status}` : closed ? 'Results ready' : 'Voting open'}</span>{own ? <span className="challenge-badge">Yours</span> : hasVoted ? <span className="challenge-badge"><span aria-hidden="true">✓ </span>Voted</span> : null}</div>
+        <div className="challenge-feed-content"><div className="challenge-card-status"><span className="eyebrow">{c.hidden_at ? 'Hidden' : c.status !== 'published' ? (draftStatusLabels[c.status] ?? 'Draft') : closed ? 'Results ready' : 'Voting open'}</span>{own ? <span className="challenge-badge">Yours</span> : hasVoted ? <span className="challenge-badge"><span aria-hidden="true">✓ </span>Voted</span> : null}</div>
           {c.joke_context && <h2>{c.joke_context}</h2>}
           {c.closes_at && !c.hidden_at && <p className="muted">{closed ? 'Closed' : 'Closes'} <time dateTime={c.closes_at}>{new Date(c.closes_at).toUTCString()}</time></p>}
           <span className="challenge-card-action">{c.hidden_at ? 'View your challenge' : c.status !== 'published' ? 'Continue your draft' : closed ? 'See the reveal' : own ? 'View your challenge' : hasVoted ? 'Review your vote' : 'Pick the funnier caption'} →</span>

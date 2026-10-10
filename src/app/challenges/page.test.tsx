@@ -12,15 +12,25 @@ const rows = [
   { id: "fresh-new", creator_id: "other" },
   { id: "fresh-old", creator_id: "other" },
 ].map(row => ({ ...row, status: "published", situation: row.id, template_url: "/example.png", closes_at: "2099-01-01T00:00:00Z" }));
-function setup(votes = [{ challenge_id: "voted" }], voteError: object | null = null) {
+function setup(votes = [{ challenge_id: "voted" }], voteError: object | null = null, challenges = rows) {
   const from = jest.fn((table: string) => {
-    const result = table === "challenges" ? { data: rows, error: null } : { data: votes, error: voteError };
+    const result = table === "challenges" ? { data: challenges, error: null } : { data: votes, error: voteError };
     const chain = { ...result, select: jest.fn(), eq: jest.fn(), is: jest.fn(), gt: jest.fn(), order: jest.fn(), limit: jest.fn(), in: jest.fn() };
     for (const method of [chain.select, chain.eq, chain.is, chain.gt, chain.order, chain.limit, chain.in]) method.mockReturnValue(chain);
     return chain;
   });
   jest.mocked(createAuthClient).mockResolvedValue({ auth: { getUser: async () => ({ data: { user: { id: "viewer" } }, error: null }) }, from } as never);
 }
+test.each([
+  ['draft', 'Draft'], ['generating', 'Generating caption'],
+  ['failed', 'Generation failed'], ['ready', 'Ready to publish'],
+])('owned %s challenges have readable status labels', async (status, label) => {
+  setup([], null, [{ ...rows[0], status }]);
+  render(await ChallengesPage({ searchParams: Promise.resolve({ view: 'yours' }) }));
+  const card = within(screen.getByRole('listitem'));
+  expect(card.getByText(label)).toBeVisible();
+  expect(card.getByText('Yours')).toBeVisible();
+});
 test("open feed prioritizes unvoted rounds, keeps voted rounds accessible and labels ownership", async () => {
   setup();
   render(await ChallengesPage({ searchParams: Promise.resolve({}) }));
