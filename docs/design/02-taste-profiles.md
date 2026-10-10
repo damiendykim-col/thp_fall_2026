@@ -1,6 +1,7 @@
 # Stage 2 — Semantic analysis and user taste profiles
 
-Status: follow-up design; not required for this week's core deliverable.
+Status: next planned work is Stage 2A evaluation; implementation has not started.
+pgvector is enabled, but no embedding provider or dimensions have been selected.
 Depends on [closed caption challenges](01-caption-challenges.md).
 Feeds [Members graph](03-members-graph.md).
 
@@ -12,6 +13,31 @@ challenges. Shared-challenge agreement remains a distinct, observed signal.
 
 The vector represents content preferences, not personality, mental health, beliefs
 or character. “Likes dark humor” must not become a claim about those other traits.
+
+## Delivery gates
+
+**2A — Evaluate representations first.** Use a small curated set of image-caption
+pairs. Include same image/different captions, similar topics/different humor,
+different topics/similar humor, topical versus evergreen jokes, and GIF examples
+where selected frames omit important timing. Compare structured style features,
+embeddings, and their combination against human judgments. Record disagreements,
+latency, usage/cost and model-input limitations. Decide the sample budget and
+acceptance criteria before calling providers; neither has been fixed yet.
+
+Choose an embedding model or defined feature space after checking current access,
+multimodal support and data handling. The existing Gemini caption model/API key
+does not settle that choice. Do not select vector dimensions or add production
+analysis tables before this decision. Image-only similarity is a separate possible
+use case; it is not sufficient evidence of humor preference.
+
+**2B — Versioned private analysis.** Persist reproducible image-caption analysis,
+retry state and provenance independently of generation and moderation. Validate
+idempotency, access controls and version compatibility with tests before integration.
+
+**2C — Private taste summaries.** Derive experimental aggregates from final closed
+ballots. Evaluate weighting and confidence; settle disclosure, participation and
+retention before user-facing release. The member graph and generation
+personalization remain later work, not part of 2A.
 
 ## Proposed pipeline
 
@@ -68,6 +94,19 @@ need a defined recomputation policy.
 
 Do not let Human/AI origin itself define humor similarity. If origin preferences are
 ever explored, they are a separate question.
+
+## Time and context
+
+Keep lasting humor-style preference distinct from temporary relevance: finals,
+weather, campus events and sociopolitical news can affect a choice. Evaluate topic
+and temporal bias alongside style similarity. See [temporal context](04-temporal-context.md)
+for the deferred provider contract and measurement decisions.
+
+Current votes contain voter, challenge and caption IDs, without vote timestamps
+or impression records. Publication/closing times do not reconstruct when someone
+saw or voted on a joke. Do not claim exposure-adjusted traction or historical trend
+measurements from the current rows. Timestamp/event-history and exposure collection
+need a deliberate design before that work; do not fabricate missing history.
 
 ## Confidence and cold start
 

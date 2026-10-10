@@ -8,17 +8,16 @@ Implemented: authenticated Challenges, upload/template drafts, server-side Gemin
 caption generation, explicit publication, one reversible upvote per voter/challenge,
 24-hour deadline, and server-enforced attribution/results reveal. Members stays separate.
 
-The subsequent [image-description review step](../image-descriptions.md) has its own
-additive migration and deployment instructions. The production sign-off above
-precedes that addition.
+Image-description review, moderation and GIF schema are now applied on hosted
+Supabase. See [maintenance](../database-maintenance-2026-10-10.md) for verification
+and history reconciliation. Live model quality still requires deployment testing.
 
-## Deploy in this order
+## Deployment reference
 
-1. Run `supabase/migrations/202610050001_caption_challenges.sql` once in the hosted
-   project's SQL editor, after the already-completed profile cutover. This creates
-   four tables, functions and a private `challenge-images` bucket. It does not
-   replace profile tables or avatar policies. Local migration has been applied only
-   to the isolated E2E stack; no hosted database was changed by this work.
+1. On a fresh project, apply the canonical `supabase/migrations` sequence. It now
+   includes the images bootstrap and profile cutover. On the existing hosted
+   project, apply only pending migrations; never replay the historical cutover.
+   A Vercel deployment does not apply database migrations.
 2. In Vercel, retain `GEMINI_API_KEY` (already configured by the project owner).
    `GEMINI_MODEL` defaults to `gemini-3.5-flash-lite`; override it if the project
    does not have access to that model. `LLM_PROVIDER` defaults to Gemini.
@@ -50,7 +49,7 @@ on production just by setting `LLM_PROVIDER=mock`.
 - Signed-in readers only, no completed-name requirement for Challenges.
 - New JPEG/PNG/WebP uploads: 3 MB maximum, 40 megapixels maximum. GIF uploads also support reviewed frames; see [GIF rollout](../gif-challenges.md) for limits and the required migration.
   Server decodes, rotates, resizes to fit 1600px, strips metadata and stores JPEG.
-  This fits the existing 3 MB Server Action limit. Originals are not retained.
+  A 4 MiB Server Action allowance accommodates multipart overhead. Originals are not retained.
 - Gallery templates, including GIFs, use the supplied situation/scene description
   as model input (now a confirmed visual description plus optional joke context). The UI discloses that frames are not analyzed. Uploaded images
   use actual normalized image bytes, not generated descriptions.
@@ -71,7 +70,8 @@ on production just by setting `LLM_PROVIDER=mock`.
   delete a referenced published image during manual storage maintenance.
 - Feed shows the latest 50 per filter; cursor pagination is deferred.
 - Existing provider safety defaults remain enabled and the prompt has content
-  constraints. The [moderation extension](../moderation.md) adds pre-publication checks and reporting; apply its migration before deploying that code.
+  constraints. The [moderation extension](../moderation.md) provides pre-publication checks and reporting. Its hosted schema is verified;
+  follow the guide when provisioning a new environment.
 
 Gemini API contract: https://ai.google.dev/api/generate-content
 Image inputs: https://ai.google.dev/gemini-api/docs/image-understanding

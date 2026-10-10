@@ -1,115 +1,82 @@
-# Meme Club: staged product design
+# Meme Club: current plan
 
-Stage 1 is implemented. The project owner has confirmed that production validation
-and performance are satisfactory for the current scope. Stages 2 and 3 remain
-design proposals; these documents are not database migrations.
+Updated October 10, 2026 (America/Phoenix). This index is the source of truth for
+priority and decision status. Detailed stage documents specify behavior; dated
+rollout records preserve history, not additional pending requirements.
 
-The new [reviewed image descriptions](../image-descriptions.md) extension is implemented
-locally and requires its migration and deployment; it is outside that earlier sign-off.
+## Current product
 
-## Delivery stages
+Challenge-first, minimalist black/yellow UI. Signed-out visitors get a labeled
+interactive example; real challenges and results remain signed-in only. Navigation
+centers on Open / Results / Yours, creation, and an account menu. Members stays
+separate from Challenges and outside primary navigation. Names and emails stay out
+of member discovery; avatars/content can still identify people.
 
-1. [Assignment 4: image uploads and caption challenges](01-caption-challenges.md)
-   — implemented: create, publish, upvote, close, reveal, and browse winners.
-2. [Semantic analysis and taste profiles](02-taste-profiles.md)
-   — classify caption/image pairs and derive evidence-backed user representations.
-3. [Members: interactive humor-similarity graph](03-members-graph.md)
-   — help members explore relationships between their humor preferences.
+Implemented scope:
+- Human versus AI caption challenges, 24-hour voting, one reversible upvote per
+  account/challenge, no creator voting, blind attribution and totals until closure.
+- Still-image uploads and GIF uploads with confirmed sampled frames. Uploaded GIFs
+  require full-animation moderator approval as well as automated checks.
+- Reviewed image descriptions, optional joke context, reporting/moderation, winners,
+  participation badges, profile editing and avatar history.
+- Local Supabase E2E setup and required GitHub unit/E2E checks.
 
-Stages describe delivery order, not three independent systems. Stage 1 provides
-content and final voting choices; Stage 2 derives representations; Stage 3 uses
-those representations for discovery. Stage 1 must work without Stages 2 or 3.
+Descriptions support accessibility and generation; they are not feed headlines.
+Current upload limits and provider settings belong in [Stage 1 setup](01-stage-1-setup.md)
+and [GIF rollout](../gif-challenges.md), not duplicated in backlog proposals.
 
-## Product boundaries
+Hosted grants, GIF schema and migration history were verified during
+[database maintenance](../database-maintenance-2026-10-10.md). Two legacy challenges
+were returned to creator review with votes cleared; they are not awaiting a new
+moderator-queue implementation. Database completion is not proof of a live Gemini
+GIF smoke test. Verify deployment/commit status from Git and the deployed app when
+releasing; do not infer it from an older planning note.
 
-- **Challenges:** home, open rounds, results, personal drafts, and creation.
-- **Templates:** part of creation, with a legacy gallery route retained.
-- **Members:** member discovery, eventually through a graph. It does not become
-  the challenge feed.
-- **Profile:** private identity editing, avatar history and favorite joke.
+## Next: Stage 2A embedding experiment
 
-Retain the minimalist black background and yellow accent. Names and emails stay
-out of member discovery. This is not a promise of anonymity: avatars and content
-can identify people.
+[Semantic analysis and taste profiles](02-taste-profiles.md) is next, beginning with
+a bounded offline/private evaluation of image-caption pairs. No embedding provider,
+vector dimensions, taxonomy, aggregation formula or evidence threshold is selected.
+pgvector is available; embeddings and taste profiles are not implemented.
 
-## Decision status
+Sequence:
+1. Verify current embedding options, multimodal support, cost and data handling.
+2. Curate examples that separate humor style from subject matter and timing.
+3. Compare structured labels, embeddings and a simple style-only baseline.
+4. Record the decision and evaluation before choosing persistent vector schema.
+5. Only then build versioned analysis storage and private taste summaries from
+   final votes on closed challenges. Set privacy and insufficient-evidence behavior
+   before exposing a user-facing feature.
 
-“Agreed” reflects explicit user direction. “Proposed” is a recommended default
-that has not been finalized. Open decisions should be settled before implementing
-the affected behavior; none should silently become a requirement.
+Analysis must not block challenge creation, moderation, voting or publication.
+Keep TDD/BDD for implementation; passing plumbing tests does not establish semantic
+quality. No automatic paid processing of the existing corpus is implied by this plan.
 
-Stage 1 uses Gemini, 24-hour challenges, authenticated challenge/winner access,
-still-image uploads, and one successful AI generation per draft. See the
-[implementation guide](01-stage-1-setup.md) for exact limits.
+## Deferred, with preserved intent
 
-Remaining work is caption-quality/persona evaluation with PM feedback, then the
-Stage 2 taxonomy, privacy, confidence and similarity-model decisions. Pagination
-and automated abandoned-upload cleanup remain deferred. A first
-[challenge moderation and reporting workflow](../moderation.md) is implemented
-locally and requires deployment.
+- [Temporal context](04-temporal-context.md): separate enduring taste from current
+  circumstances; retain a provider-independent contract. External MCP/API feeds,
+  exposure tracking and trend-driven generation are proposals, not current features.
+- [Members graph](03-members-graph.md): follows useful, permissioned taste profiles;
+  no graph UI or projection algorithm in the embedding experiment.
+- Caption quality/persona tuning: explicitly postponed; embedding evaluation does
+  not change the opponent-generation persona.
+- Watch-style honeycomb challenge browsing, carousel/swipe interactions, PvPvE:
+  future design session. Preserve the current two-caption voting rules meanwhile.
+- On-demand AI moderation explanations: advisory context, not definitive judgment;
+  deferred and distinct from existing pre-publication safety checks.
+- Pagination, automated orphan retention, notifications and recommendation ranking:
+  revisit when usage or product feedback justifies them.
 
-## Challenge-first UI revision (October 8)
+## Document map and decision discipline
 
-The home route now presents challenges. Signed-in navigation is Open / Results /
-Yours, with creation in the header and Profile / Sign out / role-specific Moderation
-in an account menu. Results combines winning captions with links to all finished
-rounds, including ties and rounds without votes. Templates are selected inside
-creation; `/images?view=templates` remains a compatibility route for earlier course
-work. `/images` redirects to challenge Results. Members remains accessible by its
-existing route but is no longer primary navigation.
+- [Stage 1](01-caption-challenges.md): implemented competition contract.
+- [Stage 1 setup](01-stage-1-setup.md): operational defaults and release checks.
+- [Stage 2](02-taste-profiles.md): experiment gates, later taste pipeline and open choices.
+- [Stage 3](03-members-graph.md): deferred discovery experience.
+- [Temporal context](04-temporal-context.md): future context inputs and measurement.
 
-Signed-out visitors currently see a clearly labeled interactive example with no
-recorded votes. The project owner approved this signed-out default. Real challenges remain
-members-only; this revision does not change upload audiences or database policies.
-OAuth retains exactly `/auth/callback`; a short-lived HTTP-only cookie carries an
-allowlisted challenge destination, including through profile completion.
-
-Honeycomb discovery (watch-style app tiles), swipe interactions, PvPvE, taste
-profiles, and the member graph are deferred. The current work focuses on a clear
-entry point, familiar navigation, and the existing two-caption competition.
-
-## Description presentation and deferred GIF work (October 9)
-
-Challenge feed cards no longer use visual descriptions as headlines. Optional joke
-context may appear; the image description remains available as image alternative
-text and generation input. Creation puts description editing and its existing
-explicit confirmation inside “Review image understanding,” with a visible review
-status and a reminder before submission. Joke context remains outside that section.
-
-GIF uploads remain deferred. Before implementing them, evaluate animation-aware
-analysis and its limitations (motion, timing, and unsampled frames), user-facing
-AI limitations disclosure, and a higher file-size limit together with decoded-pixel,
-frame-count, processing-time, Storage, and request limits. No new upload limit or
-GIF support is introduced by this UI revision. Existing GIF templates still use
-text descriptions for AI generation, as disclosed in the creation form.
-
-## Participation cues (October 9)
-
-Feed cards mark the viewer's rounds with “Yours” and their active ballots with
-“Voted.” Open-round actions become “View your challenge” or “Review your vote”
-accordingly. Voted cards remain accessible for switching or undoing votes.
-Within the latest 50 open rounds, unvoted challenges come first, then voted rounds,
-then the viewer's own rounds; each group retains newest-first order. The Yours
-filter retains its existing order. Sorting runs when loading the feed, without
-moving cards during voting. Only the viewer's own ballots are queried; attribution
-and totals remain hidden until closing.
-
-A local [GIF feasibility experiment](../../scripts/experiments/README.md) now
-preserves animation and extracts timestamped JPEG samples. It is not integrated
-with uploads. Real model quality, publication review for unsampled frames, and
-storage/upload migrations remain prerequisites for enabling GIF challenges.
-
-The active still-image upload cap is now 3 MiB (shown as 3 MB in the UI), with a
-4 MiB Server Action body allowance for multipart overhead. The existing
-challenge-images bucket definition already allows 3 MiB objects. Avatar limits
-and GIF acceptance remain unchanged.
-
-## GIF challenge integration (October 9)
-
-The storyboard is now part of Create challenge. Confirmed frames are saved with
-an immutable image representation and reused for description and caption generation;
-viewers receive the animated GIF. Uploaded GIFs require full-animation moderator
-review before publication in addition to independent automated checks. The new
-migration is applied locally only. See [GIF rollout](../gif-challenges.md) for the
-hosted migration and review workflow. This supersedes the earlier deferred-upload
-and prototype-only status above.
+“Implemented” requires code/schema evidence; “verified hosted” identifies an actual
+hosted check. “Agreed direction” is user intent, not a completed feature. Proposed
+algorithms, providers and thresholds remain open until evaluated. Update the current
+sections when decisions change rather than appending contradictory status blocks.

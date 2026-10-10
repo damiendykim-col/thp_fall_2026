@@ -76,7 +76,7 @@ Private identity lives in `profiles`; member-facing content lives in `member_pro
 
 RLS and database functions enforce ownership, voting limits, deadlines, and visibility. Raw challenge captions intentionally have no direct client access: scoped RPCs return the fields a viewer may see, keeping AI attribution and vote totals hidden during an open challenge. Server admin credentials are reserved for privileged upload and generation operations.
 
-New challenge uploads accept still JPEG, PNG, and WebP images up to 2 MB and are normalized before storage. Uploaded images are sent to the model; gallery templates, including GIFs, use the confirmed image description and optional context instead of frame analysis. See [Stage 1 setup and limits](docs/design/01-stage-1-setup.md) for generation quotas and operational details.
+New challenge uploads accept JPEG, PNG, WebP and GIF images up to 3 MiB (shown as 3 MB). Still images are normalized; GIFs retain animation and use confirmed sampled frames for AI input, with full-animation moderator approval before publication. Uploaded image representations are sent to the model; gallery templates, including GIFs, use the confirmed image description and optional context instead of frame analysis. See [Stage 1 setup and limits](docs/design/01-stage-1-setup.md) for generation quotas and operational details.
 
 ## Hosted setup and deployment
 
@@ -97,7 +97,8 @@ For ordinary development against a configured backend, `.env.example` lists the 
 
 ## Further reading
 
-- [Design stages](docs/design/README.md): challenge design and future taste profiles / interactive Members graph. Those later stages are planned, not implemented.
+- [Current plan](docs/design/README.md): implemented scope, next embedding experiment, open decisions and deferred work.
+- [Temporal context](docs/design/04-temporal-context.md): future dated context and external provider integration; not implemented.
 - [E2E guide](docs/e2e.md): local setup, test login, browser coverage, and CI.
 - [Profile schema rollout](docs/profile-schema-rollout.md): identity separation and migration verification.
 - [Stage 1 setup](docs/design/01-stage-1-setup.md): AI configuration, storage, quotas, and current limits.

@@ -1,7 +1,9 @@
 # Challenge moderation
 
-Status: implemented and tested locally. Hosted migration, moderator provisioning,
-template review, and a live Gemini smoke test remain deployment steps.
+Status: implemented; hosted schema and moderator presence verified during
+[database maintenance](database-maintenance-2026-10-10.md). The project owner
+previously confirmed the moderation experience. The setup steps below apply to new
+environments; live GIF/provider behavior still requires release smoke testing.
 This is a small challenge moderation workflow, not a guarantee that all harmful
 content will be detected or that a moderator is continuously monitoring reports.
 

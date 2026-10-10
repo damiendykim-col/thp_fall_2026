@@ -36,20 +36,23 @@ outputs, vote inserts, RLS, and an intentional product experience.
 - One successful AI candidate per draft; retry failures within the configured limits.
   Creating a draft freezes the human caption and situation; successful outputs cannot
   be regenerated.
-- New uploads support still JPEG, PNG and WebP, up to 3 MB and 40 megapixels.
+- New still uploads support JPEG, PNG and WebP, up to 3 MiB and 40 megapixels.
   They are normalized to JPEG, at most 1600px per side. Existing templates, including
   GIFs, use the supplied scene description rather than frame analysis.
-- Published pairs, their source image and deadline cannot be edited. Withdrawal can
-  be designed separately; changing a joke must not change what existing votes mean.
+- GIF uploads use confirmed frame sampling plus full-animation moderator review;
+  see [GIF limits and flow](../gif-challenges.md).
+- Published pairs, their source image and deadline cannot be edited through the app.
+  Creators/moderators can hide a challenge; changing a joke must not change what votes mean.
 
 ## User flow and navigation
 
-1. From Images or a Create action in Challenges, choose a template or upload an image.
-2. Preview the image; enter a situation and a human caption.
+1. From the challenge-first home, use Create to choose a template or upload an image.
+2. For GIF uploads, confirm sampled frames; review image understanding, optionally
+   add joke context, and write a human caption.
 3. Generate the opponent, with clear pending, failed and retry states.
 4. Preview both captions and explicitly publish the pair.
 5. Browse Open challenges, select one upvote, undo it, or switch choices.
-6. Return to Finished challenges for attribution and results.
+6. Return to Results for attribution, winners and all finished rounds.
 
 A challenge displays the image once, followed by equally styled caption choices.
 Yellow indicates the viewer's selected upvote. Assign order randomly per viewer
@@ -73,7 +76,8 @@ Original upload bytes are not retained. A published image must not be overwritte
 
 Uploaded images use their normalized bytes as model input. Templates use the
 supplied scene description, with that limitation disclosed in the UI. Each generation
-records its input representation; GIF animation is not analyzed.
+records its input representation. Uploaded GIFs send confirmed timestamped JPEG
+frames; template GIFs remain description-only. Sampled frames may miss motion or timing.
 
 Draft abandonment can leave uploads behind. Plan ownership-aware cleanup with a
 retention window; never delete referenced published assets. Signed URL expiry is
@@ -84,7 +88,7 @@ part of the access model, not immediate revocation.
 - **Challenge images:** owner, storage reference or existing template reference,
   MIME type/dimensions and lifecycle metadata.
 - **Challenges:** creator, source image, shared situation, publication/closing times
-  and draft/generation/publication state. Withdrawal is deferred.
+  and draft/generation/publication state, with hiding for withdrawal/moderation.
 - **Caption candidates:** challenge and immutable text. Each published challenge
   has exactly one human and one AI candidate.
 - **Private attribution:** candidate origin and generation linkage. Keep it outside
@@ -92,7 +96,8 @@ part of the access model, not immediate revocation.
 - **Generation requests:** owner, image/model-input reference, exact application-sent
   prompt messages, provider/model identifier, prompt version, status and result/error
   metadata. No credentials or inaccessible provider-internal reasoning.
-- **Votes:** voter, challenge, selected candidate and timestamps. Enforce uniqueness
+- **Votes:** voter, challenge and selected candidate. Vote timestamps/event history
+  are not currently stored. Enforce uniqueness
   on voter/challenge and that the candidate belongs to that same challenge.
 
 These describe conceptual responsibilities. The implemented table and RPC contracts
@@ -167,7 +172,7 @@ Record PM feedback and reserve time for one focused revision before submission.
 Deferred: genre analysis, embeddings, Members graph, rankings, comments, personalized
 recommendations, true A/B exposure experiments and automatic notifications.
 
-Remaining decisions concern caption quality/persona tuning from PM feedback and
-future moderation/reporting behavior. Provider, duration, upload limits, image
-representation, regeneration rules, audience, and voting rules are implemented.
-Unique closed winners now appear in Images; see [winner eligibility](../winners-gallery.md).
+Moderation/reporting and GIF support are implemented. Caption quality/persona tuning
+is explicitly deferred. Stage 2A representation evaluation is next; see the
+[current plan](README.md). Unique closed winners appear in Results; `/images` is a
+compatibility redirect. See [winner eligibility](../winners-gallery.md).

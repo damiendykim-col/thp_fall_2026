@@ -1,8 +1,9 @@
 # Reviewed image descriptions
 
-Status: implemented locally; apply the migration below before deploying this change.
-The earlier production/performance sign-off covers the previous challenge flow,
-not this new description step. Live Gemini description quality still needs a smoke test.
+Status: implemented; hosted schema verified during
+[database maintenance](database-maintenance-2026-10-10.md). Migration instructions
+below are for new environments, not a request to replay applied SQL. Evaluate live
+Gemini description quality separately from schema and mock-provider checks.
 
 ## Creation flow
 

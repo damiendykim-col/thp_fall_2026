@@ -1,6 +1,6 @@
 # Stage 3 — Members: interactive humor-similarity graph
 
-Status: follow-up product design, separate from Challenges.
+Status: deferred; not part of the Stage 2A embedding experiment. Separate from Challenges.
 Depends on [taste representations](02-taste-profiles.md).
 
 ## Agreed direction
