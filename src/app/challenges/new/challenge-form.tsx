@@ -4,6 +4,9 @@ import { startTransition, useActionState, useEffect, useRef, useState } from "re
 import { useRouter } from "next/navigation";
 import { createChallenge } from "../actions";
 import { uploadChallengeImage, suggestImageDescription } from "../image-actions";
+import { MAX_CHALLENGE_UPLOAD_BYTES, CHALLENGE_UPLOAD_SIZE_MESSAGE } from "@/lib/challenges/upload-limits";
+import FrameReview from "./frame-review";
+import type { Storyboard } from "@/lib/challenges/gif-types";
 import type { GalleryImage } from "@/lib/images";
 
 export default function ChallengeForm({ templates }: { templates: GalleryImage[] }) {
@@ -12,6 +15,7 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
   const [template, setTemplate] = useState("");
   const [preview, setPreview] = useState("");
   const [submission, setSubmission] = useState("");
+  const [storyboard,setStoryboard] = useState<Storyboard>();
   const [imageId, setImageId] = useState("");
   const [description, setDescription] = useState("");
   const [suggestion, setSuggestion] = useState("");
@@ -32,6 +36,7 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
     requestVersion.current += 1;
     setSubmission(crypto.randomUUID());
     setImageId("");
+    setStoryboard(undefined);
     setDescription("");
     setSuggestion("");
     setConfirmed(false);
@@ -45,6 +50,7 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
     selectedFile.current = selected;
     setPreview(selected ? URL.createObjectURL(selected) : "");
     if (!selected) return;
+    if (!selected.size || selected.size > MAX_CHALLENGE_UPLOAD_BYTES) { setImageError(CHALLENGE_UPLOAD_SIZE_MESSAGE); return; }
     const version = requestVersion.current;
     setImageStatus("Uploading image…");
     startTransition(async () => {
@@ -53,6 +59,7 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
         form.set("image", selected);
         const upload = await uploadChallengeImage(form);
         if (version !== requestVersion.current) return;
+        if (upload.storyboard) { setStoryboard(upload.storyboard); return; }
         if (!upload.id) { setImageError(upload.error || "Upload failed. Please retry."); return; }
         setImageId(upload.id);
         setImageStatus("Suggesting an image description…");
@@ -74,6 +81,25 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
     });
   }
 
+  async function confirmFrames(frames: number[]): Promise<boolean> {
+    const file = selectedFile.current;
+    if (!file) return false;
+    const version = requestVersion.current;
+    setImageStatus("Saving frames and checking image…"); setImageError("");
+    try {
+      const form = new FormData(); form.set("image",file); form.set("frames",JSON.stringify(frames));
+      const upload = await uploadChallengeImage(form);
+      if (version !== requestVersion.current) return false;
+      if (!upload.id) { setImageError(upload.error || "Frames could not be saved."); return false; }
+      setImageId(upload.id); setImageStatus("Suggesting an image description…");
+      const result=await suggestImageDescription(upload.id);
+      if (version !== requestVersion.current) return false;
+      setDescription(result.description ?? ""); setSuggestion(result.description ?? ""); setImageError(result.error ?? "");
+      return true;
+    } catch { if (version === requestVersion.current) setImageError("Frame confirmation could not finish. Please retry."); return false; }
+    finally { if (version === requestVersion.current) setImageStatus(""); }
+  }
+
   const ready = source === "upload" ? Boolean(imageId) : Boolean(template);
   const imageUrl = source === "upload" ? preview : templates.find(t => t.id === template)?.image_url;
 
@@ -88,8 +114,8 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
       </label>
       {source === "upload" ? (
         <label>Challenge image
-          <input aria-label="Challenge image" type="file" accept="image/jpeg,image/png,image/webp" disabled={pending} onChange={e => selectFile(e.target.files?.[0] ?? null)} />
-          <span className="muted">Still JPEG, PNG or WebP, up to 2 MB. Separate from your profile photo.</span>
+          <input aria-label="Challenge image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={pending} onChange={e => selectFile(e.target.files?.[0] ?? null)} />
+          <span className="muted">JPEG, PNG, WebP or GIF, up to 3 MB. GIFs: up to 120 frames and 30 seconds; moderator review required before publication.</span>
         </label>
       ) : (
         <label>Gallery template
@@ -106,6 +132,7 @@ export default function ChallengeForm({ templates }: { templates: GalleryImage[]
       {/* Native images preserve animated templates and local upload previews. */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {imageUrl && <img className="challenge-image" src={imageUrl} alt="Selected challenge image" />}
+      {storyboard && <FrameReview key={preview} data={storyboard} onConfirm={confirmFrames} onChange={() => { setImageId(""); setDescription(""); setSuggestion(""); setConfirmed(false); setManual(false); }} notice="Confirming saves these frames and requests an AI description. A moderator must review the full GIF before publication." />}
       {imageStatus && <p role="status">{imageStatus}</p>}
       {imageError && <p role="alert">{imageError}</p>}
       {imageError && source === "upload" && !imageId && !imageStatus && <button className="button" type="button" disabled={pending} onClick={() => selectFile(selectedFile.current)}>Retry this image</button>}

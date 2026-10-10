@@ -27,3 +27,10 @@ export async function approveTemplate(id: string): Promise<ChallengeResult> {
   revalidatePath("/moderation");
   return error ? { error: "Template could not be approved." } : {};
 }
+
+export async function reviewGif(id: string, approved: boolean): Promise<ChallengeResult> {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.rpc("review_challenge_gif", { p_image: id, p_approved: approved });
+  revalidatePath("/moderation"); revalidatePath("/challenges", "layout");
+  return error ? { error: "GIF review could not be saved." } : {};
+}

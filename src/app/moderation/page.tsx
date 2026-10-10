@@ -7,10 +7,13 @@ export default async function ModerationPage() {
   const { supabase } = await requireUser();
   const { data: allowed, error: roleError } = await supabase.rpc("is_moderator");
   if (roleError || !allowed) notFound();
-  const [reports, templates] = await Promise.all([
-    supabase.rpc("list_challenge_reports"), supabase.rpc("list_unreviewed_templates"),
+  const [reports, templates, gifs] = await Promise.all([
+    supabase.rpc("list_challenge_reports"), supabase.rpc("list_unreviewed_templates"), supabase.rpc("list_unreviewed_gifs"),
   ]);
-  if (reports.error || templates.error) throw new Error("Moderation queue could not be loaded.");
+  if (reports.error || templates.error || gifs.error) throw new Error("Moderation queue could not be loaded.");
+  const paths = (gifs.data ?? []).map((gif: { storage_path: string }) => gif.storage_path);
+  const { data: signed } = paths.length ? await supabase.storage.from("challenge-images").createSignedUrls(paths,3600) : { data: [] };
+  const urls = new Map((signed ?? []).map(item => [item.path,item.signedUrl]));
   return <><SiteHeader /><main className="page-shell account-page">
     <h1>Moderation</h1>
     <p>Dark humor and satire alone are not grounds for removal. Review threats, hate, targeted harassment, sexual exploitation, self-harm encouragement, and privacy violations.</p>
@@ -21,6 +24,12 @@ export default async function ModerationPage() {
       <p>{report.situation}</p><p>Reason: {report.reason.replaceAll("_", " ")}</p>
       <Link href={`/challenges/${report.challenge_id}`}>Review challenge</Link>
       <ModeratorControls reportId={report.id} challengeId={report.challenge_id} />
+    </li>)}</ul>
+    <h2>GIF upload reviews</h2>
+    <p>Review the full animation, including brief text and transitions. Creator-selected frames do not establish safety. Showing the oldest 50 pending uploads.</p>
+    <ul className="challenge-list">{gifs.data?.map((gif: { id: string; storage_path: string }) => <li className="challenge-card" key={gif.id}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {urls.get(gif.storage_path) ? <><img className="challenge-image" src={urls.get(gif.storage_path) ?? undefined} alt="Full GIF awaiting moderator review" /><ModeratorControls gifId={gif.id} /></> : <p role="alert">GIF unavailable. Refresh to try again.</p>}
     </li>)}</ul>
     <h2>Template reviews</h2>
     <p>Review the full image or animation before approving it for challenges. Text descriptions cannot establish image safety. This does not moderate or remove the public Templates gallery itself.</p>

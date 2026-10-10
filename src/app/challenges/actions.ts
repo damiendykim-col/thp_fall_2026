@@ -56,10 +56,10 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
   try {
     const config = generationConfig();
     const admin = challengeAdmin();
-    const { challenge, bytes } = await reviewChallenge(user.id, id, false);
+    const { challenge, bytes, frames } = await reviewChallenge(user.id, id, false);
     const prompt = captionPrompt(
       challenge.image_description ? challenge.joke_context ?? "" : challenge.situation,
-      challenge.image_path, challenge.image_description ?? undefined,
+      challenge.image_path, challenge.image_description ?? undefined, frames,
     );
     const { data, error: claimError } = await admin.rpc("claim_caption_generation", { p_owner: user.id, p_challenge: id, p_provider: config.provider, p_model: config.model, p_prompt: prompt });
     if (claimError) {
@@ -93,6 +93,11 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
 export async function publishChallenge(id: string): Promise<ChallengeResult> {
   const { supabase, user } = await requireUser();
   try {
+    const { data: row } = await supabase.from("challenges").select("image_id,image_path").eq("id",id).eq("creator_id",user.id).single();
+    if (row?.image_path?.endsWith(".gif")) {
+      const { data: image } = await supabase.from("challenge_images").select("animation_review").eq("id",row.image_id).single();
+      if (image?.animation_review !== "approved") return { error: image?.animation_review === "rejected" ? "This GIF was rejected by a moderator. Start a revised challenge with a different image." : "The full GIF is awaiting moderator review. You can publish after approval." };
+    }
     await reviewChallenge(user.id, id, true);
     const { error } = await supabase.rpc("publish_caption_challenge", { p_challenge: id });
     if (error) return { error: "Publication requires approved content and both captions. Hidden challenges cannot be republished." };

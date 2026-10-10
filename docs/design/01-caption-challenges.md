@@ -36,7 +36,7 @@ outputs, vote inserts, RLS, and an intentional product experience.
 - One successful AI candidate per draft; retry failures within the configured limits.
   Creating a draft freezes the human caption and situation; successful outputs cannot
   be regenerated.
-- New uploads support still JPEG, PNG and WebP, up to 2 MB and 40 megapixels.
+- New uploads support still JPEG, PNG and WebP, up to 3 MB and 40 megapixels.
   They are normalized to JPEG, at most 1600px per side. Existing templates, including
   GIFs, use the supplied scene description rather than frame analysis.
 - Published pairs, their source image and deadline cannot be edited. Withdrawal can

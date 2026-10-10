@@ -67,3 +67,17 @@ test("descriptions have their own limit and caption prompts separate visual fact
   expect(prompt.user).toContain("Joke context: Exam week");
   expect(prompt.version).toBe("caption-v2");
 });
+
+test("confirmed GIF frames reach Gemini as ordered JPEG parts with recorded provenance", async () => {
+  const sharp = (await import("sharp")).default;
+  const frames = await Promise.all(["red","green","blue"].map(background => sharp({create:{width:16,height:16,channels:3,background}}).png().toBuffer()));
+  const gif = await sharp(frames,{join:{animated:true}}).gif({delay:[100,200,300],keepDuplicateFrames:true}).toBuffer();
+  const fetchMock = jest.spyOn(global,"fetch").mockResolvedValue(new Response(JSON.stringify({candidates:[{finishReason:"STOP",content:{parts:[{text:"A caption."}]}}]})));
+  const prompt = captionPrompt("A long week","owner/file.gif","A changing scene.",[0,2]);
+  await generateCaption({provider:"gemini",model:"test"},prompt,gif);
+  expect(prompt.representation).toBe("gif-confirmed-frames-v1");
+  expect(prompt.frames).toEqual([0,2]);
+  const request = JSON.parse(fetchMock.mock.calls[0][1]!.body as string);
+  expect(request.contents[0].parts.filter((p: {inlineData?:object})=>p.inlineData)).toHaveLength(2);
+  expect(JSON.stringify(request)).toContain("0.300s");
+});

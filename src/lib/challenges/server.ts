@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import sharp from "sharp";
+import { MAX_CHALLENGE_UPLOAD_BYTES, CHALLENGE_UPLOAD_SIZE_MESSAGE } from "./upload-limits";
 
 export function challengeAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -9,7 +10,7 @@ export function challengeAdmin() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 export async function normalizeChallengeImage(file: File) {
-  if (!file.size || file.size > 2 * 1024 * 1024) throw new Error("Choose a JPEG, PNG or WebP image up to 2 MB.");
+  if (!file.size || file.size > MAX_CHALLENGE_UPLOAD_BYTES) throw new Error(CHALLENGE_UPLOAD_SIZE_MESSAGE);
   const bytes = Buffer.from(await file.arrayBuffer());
   try {
     const image = sharp(bytes, { limitInputPixels: 40_000_000, failOn: "warning" });

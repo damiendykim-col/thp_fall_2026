@@ -93,3 +93,23 @@ then the viewer's own rounds; each group retains newest-first order. The Yours
 filter retains its existing order. Sorting runs when loading the feed, without
 moving cards during voting. Only the viewer's own ballots are queried; attribution
 and totals remain hidden until closing.
+
+A local [GIF feasibility experiment](../../scripts/experiments/README.md) now
+preserves animation and extracts timestamped JPEG samples. It is not integrated
+with uploads. Real model quality, publication review for unsampled frames, and
+storage/upload migrations remain prerequisites for enabling GIF challenges.
+
+The active still-image upload cap is now 3 MiB (shown as 3 MB in the UI), with a
+4 MiB Server Action body allowance for multipart overhead. The existing
+challenge-images bucket definition already allows 3 MiB objects. Avatar limits
+and GIF acceptance remain unchanged.
+
+## GIF challenge integration (October 9)
+
+The storyboard is now part of Create challenge. Confirmed frames are saved with
+an immutable image representation and reused for description and caption generation;
+viewers receive the animated GIF. Uploaded GIFs require full-animation moderator
+review before publication in addition to independent automated checks. The new
+migration is applied locally only. See [GIF rollout](../gif-challenges.md) for the
+hosted migration and review workflow. This supersedes the earlier deferred-upload
+and prototype-only status above.

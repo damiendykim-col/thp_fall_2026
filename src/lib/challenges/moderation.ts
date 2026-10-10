@@ -1,4 +1,5 @@
 import "server-only";
+import { imageParts } from "./media";
 import { createHash } from "node:crypto";
 import { challengeAdmin } from "./server";
 import { generationConfig } from "./generation";
@@ -39,7 +40,7 @@ export async function classifyContent(config: ReturnType<typeof generationConfig
   }
   try {
     const parts: object[] = [{ text }];
-    if (image) parts.push({ inlineData: { mimeType: "image/jpeg", data: image.toString("base64") } });
+    if (image) parts.push(...await imageParts(image));
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(config.model)}:generateContent`, {
       method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
       signal: AbortSignal.timeout(15_000), cache: "no-store",
@@ -127,5 +128,11 @@ export async function reviewChallenge(owner: string, id: string, includeAI: bool
   if (includeAI && ai) updates.ai_moderation_id = await ensureModerated(owner, "ai", humanReviewText(description, context, ai.body), bytes);
   const { error: updateError } = await admin.from("challenges").update(updates).eq("id", id).eq("creator_id", owner).is("hidden_at", null);
   if (updateError) throw new ModerationError(unavailable);
-  return { challenge, bytes };
+  let frames: number[] | undefined;
+  if (challenge.image_id) {
+    const { data: image, error: imageError } = await admin.from("challenge_images").select("media_format,selected_frames").eq("id",challenge.image_id).single();
+    if (imageError) throw new ModerationError("Image metadata could not be loaded.");
+    if (image?.media_format === "gif") frames = image.selected_frames;
+  }
+  return { challenge, bytes, frames };
 }

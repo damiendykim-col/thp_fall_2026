@@ -1,5 +1,9 @@
 "use server";
 
+import { isGif } from "@/lib/challenges/media";
+import { prepareGif } from "@/lib/challenges/gif.mjs";
+import type { Storyboard } from "@/lib/challenges/gif-types";
+import { MAX_CHALLENGE_UPLOAD_BYTES } from "@/lib/challenges/upload-limits";
 import { createHash } from "node:crypto";
 import { requireUser } from "@/lib/auth";
 import { challengeAdmin, normalizeChallengeImage } from "@/lib/challenges/server";
@@ -9,6 +13,7 @@ import { ensureModerated, moderationMessage } from "@/lib/challenges/moderation"
 
 export type ImageReviewResult = {
   id?: string;
+  storyboard?: Storyboard;
   description?: string;
   error?: string;
 };
@@ -18,8 +23,19 @@ export async function uploadChallengeImage(form: FormData): Promise<ImageReviewR
   const file = form.get("image");
   if (!(file instanceof File) || !file.size) return { error: "Choose an image first." };
   let bytes: Buffer;
+  let frames: number[] | undefined;
+  let frameCount: number | undefined;
   try {
-    bytes = await normalizeChallengeImage(file);
+    if (file.size > MAX_CHALLENGE_UPLOAD_BYTES) throw new Error("Choose an image up to 3 MB.");
+    const input = Buffer.from(await file.arrayBuffer());
+    if (isGif(input)) {
+      const selected = form.get("frames");
+      const selection = selected === null ? undefined : JSON.parse(String(selected));
+      if (selected !== null && !Array.isArray(selection)) throw new Error("Choose valid frames.");
+      const gif = await prepareGif(input, { thumbnails: selected === null, selectedFrames: selection });
+      if (selected === null) return { storyboard: { durationMs: gif.durationMs, selected: gif.samples.map(s => s.index), frames: gif.previews.map(f => ({ index:f.index,startMs:f.startMs,durationMs:f.durationMs,src:`data:image/jpeg;base64,${f.jpeg.toString("base64")}` })) } };
+      bytes = gif.animation; frames = gif.samples.map(s => s.index); frameCount = gif.frames;
+    } else bytes = await normalizeChallengeImage(file);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "The image could not be read." };
   }
@@ -28,7 +44,8 @@ export async function uploadChallengeImage(form: FormData): Promise<ImageReviewR
     // An owner-scoped content hash makes upload retries reuse the image and its analysis.
     // The reservation RPC serializes quota checks before either storage or provider work.
     const { data: image, error } = await admin.rpc("reserve_challenge_image", {
-      p_owner: user.id, p_hash: createHash("sha256").update(bytes).digest("hex"),
+      p_owner: user.id, p_hash: createHash("sha256").update(bytes).update(frames ? JSON.stringify(frames) : "").digest("hex"),
+      ...(frames ? { p_format: "gif", p_frames: frames, p_count: frameCount } : {}),
     });
     if (error || !image) return { error: "Unable to prepare image. Check the migration and daily limit of 10 images." };
     const moderationId = await ensureModerated(user.id, "image", "Check this uploaded image.", bytes);
@@ -36,7 +53,7 @@ export async function uploadChallengeImage(form: FormData): Promise<ImageReviewR
     if (moderationError) return { error: "The safety result could not be saved. Please retry." };
     if (!image.upload_ready) {
       const { error: uploadError } = await admin.storage.from("challenge-images").upload(image.storage_path, bytes, {
-        contentType: "image/jpeg", cacheControl: "3600", upsert: false,
+        contentType: frames ? "image/gif" : "image/jpeg", cacheControl: "3600", upsert: false,
       });
       // A concurrent retry can have uploaded these same normalized bytes first.
       if (uploadError && String(uploadError.statusCode) !== "409") return { error: "The image could not be uploaded. Please retry." };
@@ -66,7 +83,7 @@ export async function suggestImageDescription(id: string): Promise<ImageReviewRe
       .lt("description_started_at", new Date(Date.now() - 120_000).toISOString()).select("id").maybeSingle();
     return expired ? fallback : { error: "Description is already being generated. Retry this image after two minutes if the request was interrupted." };
   }
-  const prompt = descriptionPrompt(image.storage_path);
+  const prompt = descriptionPrompt(image.storage_path, image.media_format === "gif" ? image.selected_frames : undefined);
   try {
     const config = generationConfig();
     const { data: claimed, error: claimError } = await admin.from("challenge_images").update({

@@ -6,7 +6,7 @@ The app uses a minimal black theme with yellow accents and deploys to Vercel.
 
 ## What you can do
 
-- **Challenges:** upload an image or choose a template, review its description, add optional joke context, write a caption, generate an AI opponent, and publish a 24-hour challenge. Each account gets one active upvote per challenge, with the ability to undo or switch it before closing. Creators cannot vote on their own challenges. Caption order varies by viewer; authorship and totals stay hidden until the deadline.
+- **Challenges:** upload an image (including GIFs with reviewed frames) or choose a template, review its description, add optional joke context, write a caption, generate an AI opponent, and publish a 24-hour challenge. Each account gets one active upvote per challenge, with the ability to undo or switch it before closing. Creators cannot vote on their own challenges. Caption order varies by viewer; authorship and totals stay hidden until the deadline.
 - **Home:** signed-out visitors can try an illustrative caption choice without recording a vote. Signed-in users browse Open / Results / Yours, with image-led challenge cards.
 - **Results:** browse winners with Human-written or AI-generated labels, plus all finished rounds including ties and rounds without votes. Templates live in challenge creation; the legacy gallery remains at `/images?view=templates`.
 - **Account menu:** open Profile, sign out, or access Moderation if provisioned as a moderator.
@@ -103,3 +103,5 @@ For ordinary development against a configured backend, `.env.example` lists the 
 - [Stage 1 setup](docs/design/01-stage-1-setup.md): AI configuration, storage, quotas, and current limits.
 - [Winners gallery](docs/winners-gallery.md): eligibility, visibility, and deployment.
 - [Performance notes](docs/performance.md): caching, request timing, and instrumentation.
+
+GIF uploads require an additional migration and full-animation moderator approval before publication. See [GIF rollout](docs/gif-challenges.md).

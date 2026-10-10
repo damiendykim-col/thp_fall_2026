@@ -48,7 +48,7 @@ on production just by setting `LLM_PROVIDER=mock`.
 ## Operational choices
 
 - Signed-in readers only, no completed-name requirement for Challenges.
-- New JPEG/PNG/WebP uploads: 2 MB maximum, 40 megapixels maximum, still images only.
+- New JPEG/PNG/WebP uploads: 3 MB maximum, 40 megapixels maximum. GIF uploads also support reviewed frames; see [GIF rollout](../gif-challenges.md) for limits and the required migration.
   Server decodes, rotates, resizes to fit 1600px, strips metadata and stores JPEG.
   This fits the existing 3 MB Server Action limit. Originals are not retained.
 - Gallery templates, including GIFs, use the supplied situation/scene description

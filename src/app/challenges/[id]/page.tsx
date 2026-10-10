@@ -14,6 +14,11 @@ export default async function ChallengePage({ params }: { params: Promise<{ id: 
   if (error) throw new Error("Unable to load challenge.");
   if (!data) notFound();
   const challenge = data as Challenge;
+  let animationReview: string | null = null;
+  if (challenge.own && challenge.image_path?.endsWith(".gif")) {
+    const { data: review } = await supabase.from("challenge_images").select("animation_review").eq("storage_path",challenge.image_path).single();
+    animationReview = review?.animation_review ?? "pending";
+  }
   let image = challenge.template_url;
   if (challenge.image_path) {
     const { data: signed } = await supabase.storage.from("challenge-images").createSignedUrl(challenge.image_path,3600);
@@ -23,6 +28,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ id: 
     {/* eslint-disable-next-line @next/next/no-img-element */}
     {image ? <img className="challenge-image" src={image} alt={challenge.image_description || challenge.situation} /> : <p>Image unavailable. Refresh to try again.</p>}
     {challenge.hidden_at ? <p role="status">This challenge is hidden from other members. Voting and publication are disabled.</p> : <>
+      {animationReview && <p role="status">{animationReview === "approved" ? "Full GIF approved by a moderator." : animationReview === "rejected" ? "This GIF was rejected by a moderator. Please choose another image." : "Full GIF awaiting moderator review before publication. You can generate your AI opponent while waiting."}</p>}
       <ChallengePanel challenge={challenge} />
       {challenge.status === "published" && <SafetyControls id={id} own={challenge.own} />}
     </>}

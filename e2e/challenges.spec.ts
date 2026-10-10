@@ -6,7 +6,10 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   const voter = await accounts.create();
   await login(page, owner);
   await page.goto("/challenges/new");
-  await page.getByLabel("Challenge image").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: await sharp({create:{width:16,height:16,channels:3,background:"#ffe01b"}}).png().toBuffer() });
+  const image = await sharp({create:{width:16,height:16,channels:3,background:"#ffe01b"}}).png().toBuffer();
+  // Exercise the exact file limit through multipart Server Actions, not only the decoder.
+  const boundaryImage = Buffer.concat([image, Buffer.alloc(3 * 1024 * 1024 - image.length)]);
+  await page.getByLabel("Challenge image").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: boundaryImage });
   await page.getByText("Review image understanding", { exact: true }).click();
   await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
   await page.getByLabel("Your caption").fill("My syllabus has entered its villain era.");
