@@ -46,3 +46,5 @@ next-env.d.ts
 /playwright-report/
 /test-results/
 /.next-e2e/
+# Supabase CLI local metadata
+/supabase/.temp/

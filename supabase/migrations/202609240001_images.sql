@@ -1,4 +1,5 @@
--- Only for the isolated E2E database: Assignment 2's dashboard-created table.
+-- Historical bootstrap promoted from the isolated E2E setup.
+-- Hosted Assignment 2 table already exists; reconcile history, do not replay.
 create table public.images (
   id uuid primary key default gen_random_uuid(),
   image_url text not null,

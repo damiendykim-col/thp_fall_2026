@@ -24,13 +24,9 @@ if (command === "start") {
   rmSync(resolve(workdir, "env.json"), { force: true });
   mkdirSync(resolve(workdir, "supabase/migrations"), { recursive: true });
   copyFileSync(resolve(root, "e2e/supabase.config.toml"), resolve(workdir, "supabase/config.toml"));
-  copyFileSync(resolve(root, "e2e/images.sql"), resolve(workdir, "supabase/migrations/202609240001_images.sql"));
   for (const file of readdirSync(resolve(root, "supabase/migrations")).filter(f => f.endsWith(".sql"))) {
     copyFileSync(resolve(root, "supabase/migrations", file), resolve(workdir, "supabase/migrations", file));
   }
-  // Use the actual reviewed cleanup, not an independently maintained final schema.
-  copyFileSync(resolve(root, "supabase/manual/20261002_finish_profile_cutover.sql"),
-    resolve(workdir, "supabase/migrations/202610020004_finish_profile_cutover.sql"));
   copyFileSync(resolve(root, "e2e/seed.sql"), resolve(workdir, "supabase/seed.sql"));
   run(["start"], true);
   run(["migration", "up", "--local"], true);

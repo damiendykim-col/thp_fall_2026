@@ -1,5 +1,8 @@
 # GIF challenge rollout
 
+Hosted migration applied and verified October 10, 2026 UTC. See
+[database maintenance](database-maintenance-2026-10-10.md) for grants and history reconciliation.
+
 GIFs are integrated into Create challenge. The standalone local experiment remains
 available, but is no longer needed to create a GIF challenge.
 

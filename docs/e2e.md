@@ -15,11 +15,11 @@ npm run e2e:setup
 npm run test:e2e
 ```
 
-Setup copies the actual repository migrations, plus the reviewed final profile
-cleanup, into an ignored local CLI workdir. It adds the dashboard-created images
-table and two deterministic gallery fixtures. No mock Supabase API is used.
-The cleanup copy affects only this disposable local database; it does not rerun
-cleanup remotely. Setup downloads Supabase's containers on its first run.
+Setup copies the canonical repository migrations into an ignored local CLI
+workdir. This sequence includes the original images table and reviewed profile
+cutover; a separate seed adds two deterministic gallery fixtures. No mock
+Supabase API is used. Setup affects only the local database and downloads
+Supabase's containers on its first run.
 
 Setup fails on CLI errors and checks Auth health, the two seeded REST images,
 and required Storage buckets before writing `env.json`. Failed setup removes
