@@ -51,3 +51,16 @@ test('underbudget job refuses before network and before writing output', async (
     await assert.rejects(() => runJob(prepareJob([dataset], { maxRequests: 1 }), directory, { key: 'fake' }), /budget/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
+
+test('v3 is explicit and changing taxonomy cannot resume a v2 job', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'taste-batch-'));
+  try {
+    const old = prepareJob([dataset], { conditions: ['caption-only'] });
+    await runJob(old, directory, { key: 'fake', timing: timing(), log: () => {}, fetcher: async url => mockResponse(url) });
+    const candidate = prepareJob([dataset], { conditions: ['caption-only'], taxonomy: 'mechanisms-v3' });
+    assert.equal(candidate.tasks[0].options.taxonomy, 'mechanisms-v3');
+    assert.notEqual(candidate.fingerprint, old.fingerprint);
+    assert.throws(() => inspectJob(candidate, directory), /configuration changed/);
+    assert.throws(() => prepareJob([dataset], { taxonomy: 'unknown' }), /taxonomy/);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});

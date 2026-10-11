@@ -1,5 +1,55 @@
 # Private taste evaluation — first slice
 
+## V3 candidate after adjudication (October 11)
+
+`--taxonomy mechanisms-v3` opts into revised evidence guidance. The default remains
+v2, with byte-identical requests and compatible existing batch ledgers. V3 retains
+the same labels, schema, models, and scoring; only its prompt changes. It checks
+for overlapping mechanisms, distinguishes downplaying from exaggeration, and
+requires evidence before asserting sarcasm or wordplay. Empty/uncertain labels
+remain valid. Tests verify routing, cache invalidation and abstention, not that an
+LLM will follow the guidance correctly.
+
+The original held-out results and approved post-result adjudication remain separate
+in `.runtime`. They are development evidence now, not fresh validation. Do not
+relabel or rescore them as untouched held-out results.
+
+Four new assistant-authored triples (12 items) are in `corpus-v3.json`. Their review
+workspace is `.runtime/v3-review.json`, prepared with seed 20261011 and no held-out
+split. No intended answers are stored. These are hypothesis-informed development
+examples from the same assistant that revised the prompt, not an independent
+benchmark. Review before viewing generated labels. A later independent corpus is
+still needed before making generalization claims.
+
+On a fresh checkout, create the private workspace first (skip this if it already
+exists; preparation refuses to overwrite saved judgments):
+
+```sh
+mkdir -p scripts/experiments/taste/.runtime
+python3 scripts/experiments/taste/corpus.py prepare scripts/experiments/taste/corpus-v3.json scripts/experiments/taste/.runtime/v3-review.json --held-out 0 --seed 20261011
+```
+
+Then, from the repository root:
+
+```sh
+python3 scripts/experiments/taste/corpus.py review scripts/experiments/taste/.runtime/v3-review.json
+python3 scripts/experiments/taste/corpus.py build scripts/experiments/taste/.runtime/v3-review.json scripts/experiments/taste/.runtime/v3-batches
+
+export TASTE_LABEL_MODEL=gemini-3.5-flash-lite
+export TASTE_EMBEDDING_MODEL=gemini-embedding-2
+python3 scripts/experiments/taste/batch.py scripts/experiments/taste/.runtime/v3-batches scripts/experiments/taste/.runtime/v3-results --taxonomy mechanisms-v3 --max-requests 56
+# After inspecting the plan, in the terminal with GEMINI_API_KEY exported:
+python3 scripts/experiments/taste/batch.py scripts/experiments/taste/.runtime/v3-batches scripts/experiments/taste/.runtime/v3-results --taxonomy mechanisms-v3 --max-requests 56 --live
+```
+
+At most 48 fresh requests for both input conditions, with eight additional attempts
+reserved for retries. Ties/unclear reduce coverage and requests. If all judgments
+are tie/unclear, the build produces only a review report; skip the batch runner.
+Keep models/prompt/scoring fixed after reviewing outputs. `.runtime/v3-freeze.json`
+records the candidate hashes and corpus fingerprint. No live requests were made
+while preparing this candidate. V3-only results cannot establish an improvement
+over v2; that requires both prompts on the same new reviewed comparisons.
+
 ## Larger corpus: offline review and batching
 
 `corpus.py` uses Python's standard library. It never reads author notes or calls a

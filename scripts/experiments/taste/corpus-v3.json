@@ -1,0 +1,91 @@
+{
+  "provenance": "Assistant-authored prospective examples after adjudication; no provider outputs or human judgments exist yet. Single-author, hypothesis-informed material, not an independent benchmark. A/B order will be randomized by corpus.py.",
+  "items": [
+    {
+      "id": "fresh-001",
+      "scene": "A pianist standing beside a piano with a broken keyboard.",
+      "caption": "My piano repair business has hit a sour note."
+    },
+    {
+      "id": "fresh-002",
+      "scene": "A tailor holding a torn jacket beside a sewing machine.",
+      "caption": "This alteration business is coming apart at the seams."
+    },
+    {
+      "id": "fresh-003",
+      "scene": "A pianist looking at an empty concert hall.",
+      "caption": "An intimate audience tonight. Just me and the fire inspector."
+    },
+    {
+      "id": "fresh-004",
+      "scene": "A cyclist beside a bicycle whose front wheel is folded after a crash.",
+      "caption": "A small adjustment to the steering."
+    },
+    {
+      "id": "fresh-005",
+      "scene": "A server carrying one plate toward a table crowded with diners.",
+      "caption": "Dinner is running a little behind schedule. Only the menu has arrived."
+    },
+    {
+      "id": "fresh-006",
+      "scene": "A cyclist pumping a tire beside a road.",
+      "caption": "I have pumped this tire enough to change the local weather."
+    },
+    {
+      "id": "fresh-007",
+      "scene": "An office worker facing a printer displaying a paper error.",
+      "caption": "The printer has appointed itself editor and rejected my entire manuscript."
+    },
+    {
+      "id": "fresh-008",
+      "scene": "A person beside a vending machine holding a coin it returned.",
+      "caption": "The vending machine reviewed my application and decided to pursue other customers."
+    },
+    {
+      "id": "fresh-009",
+      "scene": "An office worker carrying a tall stack of documents.",
+      "caption": "We have printed enough copies to give every tree a biography."
+    },
+    {
+      "id": "fresh-010",
+      "scene": "A traveler opening a suitcase full of spilled shampoo.",
+      "caption": "Good news: every shirt now comes with a complimentary spa treatment."
+    },
+    {
+      "id": "fresh-011",
+      "scene": "A person holding a house key beside a locked front door.",
+      "caption": "I locked myself out, so today’s workout includes an outdoor waiting session."
+    },
+    {
+      "id": "fresh-012",
+      "scene": "A traveler dragging several huge suitcases toward a taxi.",
+      "caption": "I packed lightly. The taxi only needs a second taxi."
+    }
+  ],
+  "candidateComparisons": [
+    {
+      "id": "fresh-comparison-001",
+      "anchor": "fresh-001",
+      "a": "fresh-002",
+      "b": "fresh-003"
+    },
+    {
+      "id": "fresh-comparison-002",
+      "anchor": "fresh-004",
+      "a": "fresh-005",
+      "b": "fresh-006"
+    },
+    {
+      "id": "fresh-comparison-003",
+      "anchor": "fresh-007",
+      "a": "fresh-008",
+      "b": "fresh-009"
+    },
+    {
+      "id": "fresh-comparison-004",
+      "anchor": "fresh-010",
+      "a": "fresh-011",
+      "b": "fresh-012"
+    }
+  ]
+}

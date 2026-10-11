@@ -16,7 +16,8 @@ function write(path, value) {
 }
 
 export function prepareJob(datasets, { conditions = ['description-only', 'caption-only'], maxRequests = 80,
-  embeddingModel = MODEL, labelModel = LABEL_MODEL, limits = LIMITS } = {}) {
+  embeddingModel = MODEL, labelModel = LABEL_MODEL, limits = LIMITS, taxonomy = 'mechanisms-v2' } = {}) {
+  if (!['mechanisms-v2', 'mechanisms-v3'].includes(taxonomy)) throw new Error('Unknown batch taxonomy');
   if (!datasets.length || !conditions.length || new Set(conditions).size !== conditions.length ||
       conditions.some(c => !['description-only', 'caption-only'].includes(c))) throw new Error('Invalid batches/conditions');
   if (!Number.isInteger(maxRequests) || maxRequests < 1 || maxRequests > 1000) throw new Error('Request budget must be 1–1000');
@@ -24,13 +25,15 @@ export function prepareJob(datasets, { conditions = ['description-only', 'captio
   createScheduler({ attempts: [] }, { limits, maxRequests }); // Validate before any output/network.
   const tasks = conditions.flatMap(representation => datasets.map((dataset, index) => {
     if (dataset.judgmentsStatus !== 'human-reviewed') throw new Error('All batches must be human-reviewed');
-    const options = { representation, taxonomy: 'mechanisms-v2', embeddingModel, labelModel, embeddingWeight: dataset.embeddingWeight ?? 0.5 };
+    const options = { representation, taxonomy, embeddingModel, labelModel, embeddingWeight: dataset.embeddingWeight ?? 0.5 };
     const plan = planRun(dataset, options);
     return { name: `${representation}-batch-${String(index + 1).padStart(2, '0')}`, dataset, options, plan };
   }));
   const operations = new Map(tasks.flatMap(task => task.plan.operations.map(operation => [operation.fingerprint, operation])));
   const requestsByRole = Object.fromEntries(['labels', 'embedding'].map(kind => [kind, [...operations.values()].filter(operation => operation.kind === kind).length]));
   const config = { version: 'taste-batch-v1', datasets, conditions, maxRequests, embeddingModel, labelModel, limits };
+  // Preserve historical v2 job fingerprints for resumability.
+  if (taxonomy !== 'mechanisms-v2') config.taxonomy = taxonomy;
   const fingerprint = createHash('sha256').update(JSON.stringify(config)).digest('hex');
   return { tasks, maxRequests, limits, fingerprint, requestsByRole, freshRequests: operations.size };
 }
@@ -120,7 +123,7 @@ async function main() {
   const { values, positionals } = parseArgs({ allowPositionals: true, options: {
     live: { type: 'boolean' }, 'max-requests': { type: 'string', default: '80' },
     condition: { type: 'string', default: 'both' },
-    limits: { type: 'string' },
+    limits: { type: 'string' }, taxonomy: { type: 'string', default: 'mechanisms-v2' },
   } });
   if (positionals.length !== 2) throw new Error('Usage: python3 batch.py BATCH_DIRECTORY OUTPUT_DIRECTORY [--live] [--condition both|description-only|caption-only] [--max-requests 80]');
   const [input, directory] = positionals.map(path => resolve(path));
@@ -128,10 +131,10 @@ async function main() {
   const datasets = paths.map(path => read(join(input, path)));
   if (new Set(datasets.map(dataset => dataset.split)).size > 1) throw new Error('Do not mix splits in one job');
   const job = prepareJob(datasets, { conditions: values.condition === 'both' ? undefined : [values.condition],
-    maxRequests: Number(values['max-requests']), embeddingModel: process.env.TASTE_EMBEDDING_MODEL,
+    taxonomy: values.taxonomy, maxRequests: Number(values['max-requests']), embeddingModel: process.env.TASTE_EMBEDDING_MODEL,
     labelModel: process.env.TASTE_LABEL_MODEL, limits: values.limits ? read(values.limits) : undefined });
   const inspection = inspectJob(job, directory);
-  console.log(JSON.stringify({ mode: values.live ? 'live' : 'plan', batches: datasets.length,
+  console.log(JSON.stringify({ mode: values.live ? 'live' : 'plan', taxonomy: values.taxonomy, batches: datasets.length,
     freshRequests: job.freshRequests, requestsByRole: job.requestsByRole,
     missingRequests: inspection.missingRequests, remainingBudget: inspection.remainingBudget,
     limits: job.limits, conditions: job.tasks.map(task => task.options.representation).filter((c, i, a) => a.indexOf(c) === i) }, null, 2));

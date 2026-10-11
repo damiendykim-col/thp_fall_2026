@@ -8,12 +8,12 @@ function validateResult(kind, result, taxonomy = 'styles-v1') {
   if (kind === 'embedding') {
     cosine(result?.vector, result?.vector);
     if (result.dimensions !== result.vector.length) throw new Error('Invalid vector dimensions');
-  } else (taxonomy === 'mechanisms-v2' ? validateMechanisms : validateLabels)(result?.labels);
+  } else (taxonomy !== 'styles-v1' ? validateMechanisms : validateLabels)(result?.labels);
 }
 
 export function planRun(dataset, { previous, labelModel = LABEL_MODEL, embeddingModel = MODEL, embeddingWeight = 0.5,
   taxonomy = 'styles-v1', representation = 'description-only' } = {}) {
-  if (!['styles-v1', 'mechanisms-v2'].includes(taxonomy) || !['caption-only', 'description-only'].includes(representation)) throw new Error('Unknown taxonomy or representation');
+  if (!['styles-v1', 'mechanisms-v2', 'mechanisms-v3'].includes(taxonomy) || !['caption-only', 'description-only'].includes(representation)) throw new Error('Unknown taxonomy or representation');
   if (!Number.isFinite(embeddingWeight) || embeddingWeight < 0 || embeddingWeight > 1) throw new Error('Embedding weight must be between zero and one');
   for (const model of [labelModel, embeddingModel]) {
     if (typeof model !== 'string' || !/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Invalid model identifier');
@@ -27,14 +27,14 @@ export function planRun(dataset, { previous, labelModel = LABEL_MODEL, embedding
     const request = buildRequest(item);
     request.model = `models/${embeddingModel}`;
     if (representation === 'caption-only') request.content.parts[0].text = `Caption: ${item.caption}`;
-    const labelRequest = taxonomy === 'mechanisms-v2' ? buildMechanismRequest(item, representation) : buildLabelRequest(item);
+    const labelRequest = taxonomy !== 'styles-v1' ? buildMechanismRequest(item, representation, taxonomy) : buildLabelRequest(item);
     if (representation === 'caption-only' && taxonomy === 'styles-v1') {
       labelRequest.contents[0].parts[0].text = `Caption: ${item.caption}`;
       labelRequest.systemInstruction.parts[0].text += ' No scene description is supplied; do not infer a scene.';
     }
     return [
       { id: item.id, kind: 'embedding', version: representation === 'caption-only' ? 'taste-caption-only-v1' : VERSION, model: embeddingModel, request },
-      { id: item.id, kind: 'labels', version: taxonomy === 'mechanisms-v2' ? MECHANISM_VERSION : LABEL_VERSION, model: labelModel, request: labelRequest },
+      { id: item.id, kind: 'labels', version: taxonomy !== 'styles-v1' ? (taxonomy === 'mechanisms-v3' ? 'taste-mechanisms-v3' : MECHANISM_VERSION) : LABEL_VERSION, model: labelModel, request: labelRequest },
     ].map(operation => ({ ...operation, fingerprint: fingerprint({ kind: operation.kind, version: operation.version, model: operation.model, request: operation.request }) }));
   });
   if (previous && (previous.version !== RUN_VERSION || !Array.isArray(previous.records))) throw new Error('Incompatible previous run; use a comparison-v1 output');
@@ -84,7 +84,7 @@ export async function executeRun(dataset, options = {}) {
   const checkpoint = options.checkpoint ?? (() => {});
   const providers = options.providers ?? {
     embedding: request => embed(request, options.key),
-    labels: request => label(request, options.key, plan.labelModel, undefined, plan.taxonomy === 'mechanisms-v2' ? validateMechanisms : validateLabels),
+    labels: request => label(request, options.key, plan.labelModel, undefined, plan.taxonomy !== 'styles-v1' ? validateMechanisms : validateLabels),
   };
   const run = { version: RUN_VERSION, representation: plan.representation, taxonomy: plan.taxonomy, createdAt: new Date().toISOString(),
     models: { embedding: plan.embeddingModel, labels: plan.labelModel }, embeddingWeight: plan.embeddingWeight,
@@ -107,7 +107,7 @@ export async function executeRun(dataset, options = {}) {
     for (const record of run.records) Object.assign(results[record.id], record.result);
     const dimensions = new Set(Object.values(results).map(result => result.vector.length));
     if (dimensions.size !== 1) throw new Error('Incompatible vector dimensions across the run');
-    if (plan.taxonomy === 'mechanisms-v2') {
+    if (plan.taxonomy !== 'styles-v1') {
       const project = field => Object.fromEntries(Object.entries(results).map(([id, result]) => [id, {
         ...result, labels: { styles: result.labels[field].filter(entry => entry.uncertainty === 'supported').map(entry => entry.label) },
       }]));
