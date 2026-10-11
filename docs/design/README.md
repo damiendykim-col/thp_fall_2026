@@ -37,9 +37,12 @@ releasing; do not infer it from an older planning note.
 [Semantic analysis and taste profiles](02-taste-profiles.md) is next, beginning with
 a bounded offline/private evaluation of image-caption pairs. No production embedding provider,
 vector dimensions, taxonomy, aggregation formula or evidence threshold is selected.
-A [description-only pilot harness](../../scripts/experiments/taste/README.md) now
-uses Gemini Embedding 2 as an experimental candidate. Fixtures await human review;
-no live model calls or semantic quality results exist yet.
+The [description-only evaluation tooling](../../scripts/experiments/taste/README.md) now
+compares Gemini Embedding 2 with structured Flash-Lite style labels and a combined
+score. Selected-challenge import and exact-result reuse are wired. The user reported
+a completed two-comparison v1 pilot; it is too small for model selection. The next
+experiment separates mechanism/delivery/topic and compares caption-only with
+scene-plus-caption. Expanded proposed fixtures still require human review.
 pgvector is available; embeddings and taste profiles are not implemented.
 
 Sequence:

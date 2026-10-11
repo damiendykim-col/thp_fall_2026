@@ -1,10 +1,13 @@
 # Stage 2 — Semantic analysis and user taste profiles
 
-Status: Stage 2A pilot harness is implemented; no live embedding evaluation has run.
+Status: Stage 2A private evaluation tooling is wired: labels, embeddings, combined
+comparison, selected-challenge import and resumable results. The user completed
+the initial two-comparison live pilot. V2 separates mechanism/delivery/topic and
+compares caption-only with scene-plus-caption; v2 has not run live yet.
 pgvector is enabled. Gemini Embedding 2 is the pilot candidate, not a production
 selection; dimensions and schema remain undecided.
 See the [pilot guide](../../scripts/experiments/taste/README.md) for model roles,
-budget, test commands and human-review prerequisites.
+bounded request budget, test commands and human-review prerequisites.
 Depends on [closed caption challenges](01-caption-challenges.md).
 Feeds [Members graph](03-members-graph.md).
 
@@ -24,8 +27,9 @@ pairs. Include same image/different captions, similar topics/different humor,
 different topics/similar humor, topical versus evergreen jokes, and GIF examples
 where selected frames omit important timing. Compare structured style features,
 embeddings, and their combination against human judgments. Record disagreements,
-latency, usage/cost and model-input limitations. Decide the sample budget and
-acceptance criteria before calling providers; neither has been fixed yet.
+latency, usage/cost and model-input limitations. The text pilot is capped at 12 items / 24 requests per run. Broader sample
+coverage and quality acceptance criteria must be agreed before using scores to
+choose a production representation; they remain open.
 
 Choose an embedding model or defined feature space after checking current access,
 multimodal support and data handling. The existing Gemini caption model/API key

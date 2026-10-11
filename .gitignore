@@ -48,3 +48,6 @@ next-env.d.ts
 /.next-e2e/
 # Supabase CLI local metadata
 /supabase/.temp/
+
+# Private taste-evaluation datasets, prompts and model results
+/scripts/experiments/taste/.runtime/

@@ -9,6 +9,8 @@
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:taste": "node --test scripts/experiments/taste/*.test.mjs",
+    "taste:plan": "node scripts/experiments/taste/run.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "e2e:setup": "node scripts/e2e-local.mjs start",

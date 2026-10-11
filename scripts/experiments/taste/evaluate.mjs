@@ -11,7 +11,7 @@ export function cosine(a,b) {
   return a.reduce((sum,x,i)=>sum+x*b[i],0)/(na*nb);
 }
 export function evaluate(vectors,trials) {
-  if (!trials.length) throw new Error('No reviewed comparisons');
+  if (!Array.isArray(trials) || !trials.length) throw new Error('No reviewed comparisons');
   const rows=trials.map(({anchor,positive,negative})=> {
     if (new Set([anchor,positive,negative]).size!==3) throw new Error('Comparison needs three distinct items');
     const margin=cosine(vectors[anchor],vectors[positive])-cosine(vectors[anchor],vectors[negative]);
@@ -28,7 +28,8 @@ export const fingerprint=request=>createHash('sha256').update(JSON.stringify({ve
 export async function embed(request,key,fetcher=fetch) {
   if (!key) throw new Error('GEMINI_API_KEY must be supplied by the operator');
   const start=performance.now();
-  const response=await fetcher(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:embedContent`,{
+  if (!/^models\/[a-zA-Z0-9._-]+$/.test(request.model)) throw new Error('Invalid embedding model');
+  const response=await fetcher(`https://generativelanguage.googleapis.com/v1beta/${request.model}:embedContent`,{
     method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
     signal:AbortSignal.timeout(30000),body:JSON.stringify(request),
   });

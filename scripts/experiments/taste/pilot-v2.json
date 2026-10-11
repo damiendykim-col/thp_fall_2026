@@ -1,0 +1,82 @@
+{
+  "judgmentsStatus": "proposed-not-human-reviewed",
+  "items": [
+    {
+      "id": "finals-absurd",
+      "scene": "A student surrounded by books at midnight.",
+      "caption": "My syllabus has filed for custody of my weekends."
+    },
+    {
+      "id": "rent-absurd",
+      "scene": "A renter opening an expensive bill.",
+      "caption": "My rent has adopted my paycheck. I get supervised visits."
+    },
+    {
+      "id": "finals-observation",
+      "scene": "A student surrounded by books at midnight.",
+      "caption": "Finals week: when the library becomes your mailing address."
+    },
+    {
+      "id": "weather-absurd",
+      "scene": "A commuter standing in heavy rain.",
+      "caption": "The forecast has enrolled me in an unpaid swimming internship."
+    },
+    {
+      "id": "weather-observation",
+      "scene": "A commuter standing in heavy rain.",
+      "caption": "It only rains when I leave my umbrella at home."
+    },
+    {
+      "id": "finals-wordplay",
+      "scene": "A student surrounded by books at midnight.",
+      "caption": "I lost my concentration. It was a minor issue."
+    },
+    {
+      "id": "commute-personification",
+      "scene": "A commuter waiting beside an empty railway platform.",
+      "caption": "The train has decided we should see other people."
+    },
+    {
+      "id": "exam-reframing",
+      "scene": "A student looking at an exam paper.",
+      "caption": "This exam is an escape room where the clues are things I was supposed to read."
+    },
+    {
+      "id": "commute-observation",
+      "scene": "A commuter waiting beside an empty railway platform.",
+      "caption": "The train is always late when I leave home on time."
+    }
+  ],
+  "comparisons": [
+    {
+      "anchor": "finals-absurd",
+      "positive": "rent-absurd",
+      "negative": "finals-observation"
+    },
+    {
+      "anchor": "weather-absurd",
+      "positive": "finals-absurd",
+      "negative": "weather-observation"
+    },
+    {
+      "anchor": "finals-absurd",
+      "positive": "commute-personification",
+      "negative": "finals-observation",
+      "category": "personification-without-shared-legal-wording"
+    },
+    {
+      "anchor": "weather-absurd",
+      "positive": "exam-reframing",
+      "negative": "weather-observation",
+      "category": "cross-topic-reframing"
+    },
+    {
+      "anchor": "commute-personification",
+      "positive": "rent-absurd",
+      "negative": "commute-observation",
+      "category": "same-scene-control"
+    }
+  ],
+  "embeddingWeight": 0.5,
+  "notes": "Proposed development examples, not held-out validation. Review each comparison; original item IDs are hypotheses, not model inputs or ground truth."
+}
