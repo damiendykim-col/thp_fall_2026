@@ -105,3 +105,16 @@ export async function suggestImageDescription(id: string): Promise<ImageReviewRe
     return fallback;
   }
 }
+
+/** Revalidate a browser-held reference without starting provider work. */
+export async function restoreChallengeImage(id: string): Promise<{ url?: string; error?: string }> {
+  const { user } = await requireUser();
+  const admin = challengeAdmin();
+  const { data: image, error } = await admin.from("challenge_images")
+    .select("storage_path,upload_ready,moderation_id").eq("id", id).eq("owner_id", user.id).single();
+  if (error || !image?.upload_ready) return { error: "Your saved image is unavailable. Choose it again; your text has been kept." };
+  const { data: safe, error: safetyError } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
+  if (safetyError || !safe) return { error: "Your saved image needs another safety check. Choose it again; your text has been kept." };
+  const { data, error: signingError } = await admin.storage.from("challenge-images").createSignedUrl(image.storage_path, 3600);
+  return signingError || !data ? { error: "Your saved image could not be loaded. Choose it again; your text has been kept." } : { url: data.signedUrl };
+}

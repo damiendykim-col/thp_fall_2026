@@ -65,7 +65,7 @@ test("GIF uploads and previous-photo restoration persist through real Storage an
     await page.getByRole("button", { name: "Save profile", exact: true }).click();
     await expect(page.getByText("Photo change not saved.", { exact: false })).not.toBeVisible();
     await expect(page.getByText("Profile saved.", { exact: false })).toBeVisible();
-    const { data, error } = await account.client.from("member_profiles").select("current_avatar_path").single();
+    const { data, error } = await account.client.from("member_profiles").select("current_avatar_path").eq("profile_id", account.id).single();
     expect(error).toBeNull();
     expect(data?.current_avatar_path).toMatch(new RegExp("^" + account.id + "/.*\\.gif$"));
     return data!.current_avatar_path as string;
@@ -79,7 +79,7 @@ test("GIF uploads and previous-photo restoration persist through real Storage an
   await page.getByRole("button", { name: "Save profile", exact: true }).click();
   await expect(page.getByText("Photo change not saved.", { exact: false })).not.toBeVisible();
   await page.reload();
-  const { data: current } = await account.client.from("member_profiles").select("current_avatar_path").single();
+  const { data: current } = await account.client.from("member_profiles").select("current_avatar_path").eq("profile_id", account.id).single();
   expect(current?.current_avatar_path).toBe(first);
   await expect.poll(() => page.getByAltText("Your profile photo preview").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
   const { data: collection } = await account.client.from("profile_photos").select("avatar_path");

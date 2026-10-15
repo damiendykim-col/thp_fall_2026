@@ -9,7 +9,7 @@ jest.mock("@/lib/challenges/generation", () => ({
 import { requireUser } from "@/lib/auth";
 import { challengeAdmin } from "@/lib/challenges/server";
 import { generateDescription, generationConfig } from "@/lib/challenges/generation";
-import { suggestImageDescription } from "./image-actions";
+import { suggestImageDescription, restoreChallengeImage } from "./image-actions";
 
 const image = { id: "image-1", upload_ready: true, storage_path: "owner/image.jpg", description_status: "pending" };
 function setup(row: object | null = image) {
@@ -20,11 +20,12 @@ function setup(row: object | null = image) {
     maybeSingle: jest.fn().mockResolvedValue({ data: { id: "image-1" } }),
   };
   const download = jest.fn().mockResolvedValue({ data: new Blob(["image"]) });
-  const admin = { rpc: jest.fn().mockResolvedValue({ data: true }), from: jest.fn(() => query), storage: { from: jest.fn(() => ({ download })) } };
+  const createSignedUrl = jest.fn().mockResolvedValue({ data: { signedUrl: "https://example.com/image" } });
+  const admin = { rpc: jest.fn().mockResolvedValue({ data: true }), from: jest.fn(() => query), storage: { from: jest.fn(() => ({ download, createSignedUrl })) } };
   jest.mocked(requireUser).mockResolvedValue({ user: { id: "owner" } } as Awaited<ReturnType<typeof requireUser>>);
   jest.mocked(challengeAdmin).mockReturnValue(admin as unknown as ReturnType<typeof challengeAdmin>);
   jest.mocked(generationConfig).mockReturnValue({ provider: "gemini", model: "test" });
-  return { query, download };
+  return { query, download, createSignedUrl, admin };
 }
 beforeEach(() => jest.clearAllMocks());
 test("description failure preserves the uploaded image for manual confirmation", async () => {
@@ -62,4 +63,23 @@ test("an image without safety approval cannot use manual description fallback", 
   expect(result.id).toBeUndefined();
   expect(result.error).toContain("must pass safety");
   expect(generateDescription).not.toHaveBeenCalled();
+});
+
+test("restore signs only the authenticated owner's ready, safety-approved upload without generating", async () => {
+  const { query, createSignedUrl } = setup();
+  expect(await restoreChallengeImage("image-1")).toEqual({ url: "https://example.com/image" });
+  expect(query.eq).toHaveBeenCalledWith("owner_id", "owner");
+  expect(createSignedUrl).toHaveBeenCalledWith("owner/image.jpg", 3600);
+  expect(generateDescription).not.toHaveBeenCalled();
+});
+test.each([null, { ...image, upload_ready: false }])("restore does not sign unavailable uploads", async row => {
+  const { createSignedUrl } = setup(row);
+  expect((await restoreChallengeImage("image-1")).url).toBeUndefined();
+  expect(createSignedUrl).not.toHaveBeenCalled();
+});
+test("restore does not sign an image whose safety approval is unavailable", async () => {
+  const { admin, createSignedUrl } = setup();
+  admin.rpc.mockResolvedValue({ data: false });
+  expect((await restoreChallengeImage("image-1")).url).toBeUndefined();
+  expect(createSignedUrl).not.toHaveBeenCalled();
 });

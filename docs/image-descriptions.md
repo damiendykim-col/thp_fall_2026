@@ -24,10 +24,34 @@ Existing challenges keep their original situation and do not require a backfill.
 A failed description request leaves the upload available for manual description.
 Only images that have passed safety checking can use manual description fallback.
 See [moderation setup](moderation.md) for its additional migration.
-An interrupted request can be recovered with **Retry this image** (or by reselecting
-the same file after leaving the page). If analysis
-is still marked running, allow two minutes before recovering it for manual review.
+If upload itself fails, **Retry this image** reuses the selected local file. Once
+the upload (including selected GIF frames) is saved, **Retry description** checks
+its analysis without uploading again. Frames saved does not mean description
+review is complete. If analysis is still marked running, allow two minutes before
+recovering it for manual review. An unavailable or unsafe image does not enable
+manual fallback.
 There is no automatic paid retry of failed description generation.
+
+## Unfinished creation recovery
+
+Before **Create draft**, text, selected template or saved upload ID, description
+review choices, and the submission ID are stored in account-scoped `sessionStorage`.
+They survive navigation and refresh within the tab. This is browser recovery, not
+an editable database challenge; creating a draft still freezes its content.
+
+File bytes, GIF preview frames, blob URLs, and signed URLs are never stored.
+A local GIF whose frames have not been saved needs file reselection on return;
+caption and joke context remain available. Saved uploads are checked server-side
+for current ownership, upload readiness, and safety approval before receiving a
+fresh preview URL. Restoration does not call Gemini. Missing images or templates
+require a new choice without losing caption/context. Stale asynchronous responses
+cannot replace a newer selection or an account's new form.
+
+Recovery clears on successful creation, **Discard unfinished challenge**, or
+sign-out in this tab. Discarding browser work does not delete an already uploaded
+object. Closing the tab normally ends this recovery session; there is no cross-device
+sync. If browser storage is blocked or full, the form remains usable and reports
+that recovery is unavailable. There is no schema migration for this change.
 
 ## Data and provenance
 
