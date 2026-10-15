@@ -2,20 +2,35 @@
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createChallenge } from "../actions";
+import { createChallenge, updateChallenge } from "../actions";
 import { uploadChallengeImage, suggestImageDescription, restoreChallengeImage } from "../image-actions";
 import { MAX_CHALLENGE_UPLOAD_BYTES, CHALLENGE_UPLOAD_SIZE_MESSAGE } from "@/lib/challenges/upload-limits";
-import { readChallengeDraft, writeChallengeDraft } from "@/lib/challenge-draft";
+import { readChallengeDraft, writeChallengeDraft, type ChallengeDraft } from "@/lib/challenge-draft";
 import FrameReview from "./frame-review";
 import type { Storyboard } from "@/lib/challenges/gif-types";
+import type { ChallengeResult } from "@/lib/challenges/types";
 import type { GalleryImage } from "@/lib/images";
 
-export default function ChallengeForm(props: { userId: string; templates: GalleryImage[] }) {
-  return <AccountChallengeForm key={props.userId} {...props} />;
+type FormProps = { userId: string; templates: GalleryImage[]; editing?: { id: string; revision: number; initial: ChallengeDraft } };
+export default function ChallengeForm(props: FormProps) {
+  return <AccountChallengeForm key={`${props.userId}:${props.editing?.id ?? "new"}:${props.editing?.revision ?? 0}`} {...props} />;
 }
 
-function AccountChallengeForm({ userId, templates }: { userId: string; templates: GalleryImage[] }) {
-  const [state, action, pending] = useActionState(createChallenge, {});
+function AccountChallengeForm({ userId, templates, editing }: FormProps) {
+  const storageKey = editing ? `${userId}:edit:${editing.id}:${editing.revision}` : userId;
+  const router = useRouter();
+  const [state, action, pending] = useActionState(async (previous: ChallengeResult, form: FormData) => {
+    const result = editing
+      ? await updateChallenge(editing.id, editing.revision, previous, form)
+      : await createChallenge(previous, form);
+    if (result.id) {
+      // Server revalidation can remount an edit form with its new revision before an
+      // effect sees the action result. Complete recovery cleanup/navigation here.
+      writeChallengeDraft(storageKey, null);
+      router.push(`/challenges/${result.id}`);
+    }
+    return result;
+  }, {});
   const [source, setSource] = useState("upload");
   const [template, setTemplate] = useState("");
   const [preview, setPreview] = useState("");
@@ -37,10 +52,10 @@ function AccountChallengeForm({ userId, templates }: { userId: string; templates
   const [imageError, setImageError] = useState("");
   const requestVersion = useRef(0);
   const selectedFile = useRef<File | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
-    const draft = readChallengeDraft(userId);
+    const stored = readChallengeDraft(storageKey);
+    const draft = stored ?? editing?.initial;
     const version = ++requestVersion.current;
     // Restore tab-local storage after hydration; it is unavailable during server rendering.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -50,7 +65,7 @@ function AccountChallengeForm({ userId, templates }: { userId: string; templates
       setDescription(draft.description); setSuggestion(draft.suggestion);
       setManual(draft.manual); setContext(draft.context); setCaption(draft.caption);
       setNeedsFile(draft.needsFile); setImageId(draft.imageId);
-      setDraftNotice("Restored your unfinished challenge in this tab.");
+      if (stored) setDraftNotice("Restored your unfinished changes in this tab.");
       if (draft.source === "template") {
         if (templates.some(t => t.id === draft.template)) setConfirmed(draft.confirmed);
         else { setTemplate(""); setDraftNotice("Your previous template is unavailable. Choose another; your text has been kept."); }
@@ -73,20 +88,19 @@ function AccountChallengeForm({ userId, templates }: { userId: string; templates
     return () => { requestVersion.current += 1; };
   // AccountChallengeForm is keyed by user; template refreshes must not overwrite edits.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [storageKey]);
 
   useEffect(() => {
     if (!initialized) return;
     const hasWork = caption || context || template || imageId || needsFile || description;
-    const saved = writeChallengeDraft(userId, state.id || !hasWork ? null : {
+    const saved = writeChallengeDraft(storageKey, state.id || !hasWork ? null : {
       source, template, imageId, submission, description, suggestion, context, caption,
       manual, confirmed, needsFile, imageReady,
     });
     // Report failure to synchronize with browser storage.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!saved) setDraftNotice("Browser recovery is unavailable. Keep this tab open until you create your draft.");
-    if (state.id) router.push(`/challenges/${state.id}`);
-  }, [initialized, userId, state.id, router, source, template, imageId, submission, description, suggestion, context, caption, manual, confirmed, needsFile, imageReady]);
+  }, [initialized, storageKey, state.id, source, template, imageId, submission, description, suggestion, context, caption, manual, confirmed, needsFile, imageReady]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
   function resetReview() {
@@ -167,10 +181,15 @@ function AccountChallengeForm({ userId, templates }: { userId: string; templates
   }
 
   function discard() {
+    if (editing) {
+      writeChallengeDraft(storageKey, null);
+      router.push(`/challenges/${editing.id}`);
+      return;
+    }
     resetReview(); setCaption(""); setContext(""); setSource("upload"); setTemplate(""); setPreview("");
     selectedFile.current = null;
     if (fileInput.current) fileInput.current.value = "";
-    writeChallengeDraft(userId, null); setDraftNotice("Unfinished challenge discarded.");
+    writeChallengeDraft(storageKey, null); setDraftNotice("Unfinished challenge discarded.");
   }
 
   const ready = source === "upload" ? Boolean(imageId) && imageReady : Boolean(template);
@@ -241,12 +260,12 @@ function AccountChallengeForm({ userId, templates }: { userId: string; templates
         <textarea name="caption" value={caption} onChange={e => setCaption(e.target.value)} required maxLength={280} placeholder="Your best line, up to 280 characters." />
       </label>
       <p className="muted">The confirmed description and optional joke context accompany the image when generating your opponent. Your caption is sent separately to Gemini for safety checking, but never to the opponent-caption generator.</p>
-      <p className="muted">Publish only images you have permission to share. Challenges are visible to signed-in users; attribution and results appear after 24 hours. Descriptions and context are frozen when you create the draft.</p>
+      <p className="muted">Publish only images you have permission to share. Challenges are visible to signed-in users; attribution and results appear after 24 hours. Published challenges cannot be edited.</p>
       {state.error && <p role="alert">{state.error}</p>}
-      {ready && !confirmed && !imageStatus && <p className="field-help">Open “Review image understanding” above and confirm the scene to enable Create draft.</p>}
-      <p className="muted">Unfinished text and saved image references are kept in this browser tab until you create a draft, discard them, or sign out. Local files must be selected again.</p>
-      <button className="button" type="button" disabled={pending || Boolean(imageStatus)} onClick={discard}>Discard unfinished challenge</button>
-      <button className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed || !caption.trim()}>{pending ? "Saving draft…" : "Create draft"}</button>
+      {ready && !confirmed && !imageStatus && <p className="field-help">Open “Review image understanding” above and confirm the scene to continue.</p>}
+      <p className="muted">Unfinished text and saved image references are kept in this browser tab until you save, discard them, or sign out. Local files must be selected again.</p>
+      <button className="button" type="button" disabled={pending || Boolean(imageStatus)} onClick={discard}>{editing ? "Discard edits" : "Discard unfinished challenge"}</button>
+      <button className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed || !caption.trim()}>{pending ? "Saving…" : editing ? "Save changes" : "Create draft"}</button>
     </form>
   );
 }

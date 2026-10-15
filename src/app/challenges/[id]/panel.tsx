@@ -41,6 +41,8 @@ export default function ChallengePanel({ challenge: c }: { challenge: Challenge 
     </article>)}</div>
     {c.closed && <p role="status">{total===0?"No votes this round.":winner?`${winner==="ai"?"AI":"Human"} caption wins this round.`:"It’s a tie."}</p>}
     {c.own && !published && <div className="challenge-controls">{c.status==="ready" ? <button className="button button-primary" disabled={pending} onClick={()=>run(()=>publishChallenge(c.id))}>Publish for 24 hours</button> : <button className="button button-primary" disabled={pending} onClick={()=>run(()=>generateOpponent(c.id))}>{pending?"Generating…":c.status==="generating"?"Check / retry generation":c.status==="failed"?"Retry AI generation":"Generate AI opponent"}</button>}</div>}
-    {error && <><p role="alert">{error}</p>{c.own && !published && <Link href="/challenges/new">Start a revised challenge</Link>}</>}
+    {c.own && !published && !c.hidden_at && c.status !== "generating" && <Link className="button" href={`/challenges/${c.id}/edit`}>Edit challenge</Link>}
+    {c.own && c.status === "generating" && <p className="muted">Editing is paused while generation is running. Check its status above before revising.</p>}
+    {error && <p role="alert">{error}</p>}
   </section>;
 }

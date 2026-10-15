@@ -50,22 +50,65 @@ export async function createChallenge(_: ChallengeResult, form: FormData): Promi
   }
 }
 
+export async function updateChallenge(id: string, revision: number, _: ChallengeResult, form: FormData): Promise<ChallengeResult> {
+  const { user, supabase } = await requireUser();
+  // Authorize before spending provider quota; the RPC repeats this check under a row lock.
+  const { data: current } = await supabase.from("challenges").select("revision,status,hidden_at")
+    .eq("id", id).eq("creator_id", user.id).single();
+  if (!current || current.hidden_at || !["draft", "failed", "ready"].includes(current.status)) return { error: "This challenge cannot be edited now. Return to its preview to check its status." };
+  if (current.revision !== revision) return { error: "This draft changed in another tab. Reload before saving your edits." };
+  const description = String(form.get("description") ?? "").trim();
+  const context = String(form.get("context") ?? "").trim();
+  const caption = String(form.get("caption") ?? "").trim();
+  const imageId = String(form.get("imageId") ?? "");
+  const template = String(form.get("template") ?? "");
+  if (form.get("confirmed") !== "on" || !description || description.length > 500 || context.length > 500 || !caption || caption.length > 280 || Boolean(imageId) === Boolean(template)) {
+    return { error: "Choose one image, confirm its description, and check the caption and context lengths." };
+  }
+  try {
+    const admin = challengeAdmin();
+    let bytes: Buffer | undefined;
+    if (imageId) {
+      const { data: image } = await admin.from("challenge_images").select("storage_path,upload_ready,moderation_id").eq("id", imageId).eq("owner_id", user.id).single();
+      if (!image?.upload_ready) throw new ModerationError("Image unavailable.");
+      const { data: safe } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
+      if (!safe) throw new ModerationError("The image must pass safety checking first.");
+      const { data: file, error } = await admin.storage.from("challenge-images").download(image.storage_path);
+      if (error || !file) throw new ModerationError("The image could not be checked. Please retry.");
+      bytes = Buffer.from(await file.arrayBuffer());
+    } else await requireTemplateReview(template);
+    await ensureModerated(user.id, "human", humanReviewText(description, context, caption), bytes);
+    const { error } = await admin.rpc("revise_caption_challenge", {
+      p_owner: user.id, p_challenge: id, p_revision: revision, p_image_id: imageId || null, p_template: template || null,
+      p_description: description, p_context: context, p_caption: caption, p_confirmed: true, p_manual: form.get("manual") === "true",
+    });
+    if (error) return { error: error.code === "40001" ? "This draft changed in another tab. Reload before saving your edits." : "Changes were not saved. The challenge may be generating, published, hidden, or awaiting image review. Return to its preview and check." };
+    // Generation and publication recheck the stored revision before attaching approvals.
+    revalidatePath("/challenges");
+    revalidatePath(`/challenges/${id}`);
+    return { id };
+  } catch (error) { return { error: moderationMessage(error) }; }
+}
+
 export async function generateOpponent(id: string): Promise<ChallengeResult> {
   const { user } = await requireUser();
   let request: string | undefined;
+  let revision: number | undefined;
   try {
     const config = generationConfig();
     const admin = challengeAdmin();
     const { challenge, bytes, frames } = await reviewChallenge(user.id, id, false);
+    revision = challenge.revision;
     const prompt = captionPrompt(
       challenge.image_description ? challenge.joke_context ?? "" : challenge.situation,
       challenge.image_path, challenge.image_description ?? undefined, frames,
     );
-    const { data, error: claimError } = await admin.rpc("claim_caption_generation", { p_owner: user.id, p_challenge: id, p_provider: config.provider, p_model: config.model, p_prompt: prompt });
+    const { data, error: claimError } = await admin.rpc("claim_reviewed_caption_generation", { p_owner: user.id, p_challenge: id, p_revision: revision, p_provider: config.provider, p_model: config.model, p_prompt: prompt });
     if (claimError) {
       // Log the operation and SQLSTATE only, never prompts or provider payloads.
-      console.error("claim_caption_generation failed", { code: claimError.code });
-      return { error: claimError.code === "P0001"
+      console.error("claim_reviewed_caption_generation failed", { code: claimError.code });
+      return { error: claimError.code === "40001"
+        ? "This draft changed. Reload before generating its AI opponent." : claimError.code === "P0001"
         ? "Generation is already running, complete, or at its limit. Interrupted requests can be retried after two minutes."
         : "Generation could not start because of a backend error. Please try again later." };
     }
@@ -80,7 +123,7 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
       console.error("finish_caption_generation failed", { code: saveError.code });
       throw new Error("The caption could not be saved. Please retry.");
     }
-    const { error: approvalError } = await admin.from("challenges").update({ ai_moderation_id: aiCheck }).eq("id", id).eq("creator_id", user.id);
+    const { error: approvalError } = await admin.from("challenges").update({ ai_moderation_id: aiCheck }).eq("id", id).eq("creator_id", user.id).eq("revision", revision!);
     if (approvalError) throw new Error("The safety result could not be saved. Please retry publication.");
     revalidatePath(`/challenges/${id}`);
     return {};

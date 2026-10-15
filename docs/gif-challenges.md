@@ -32,7 +32,7 @@ Changing confirmed frames before draft creation makes a new immutable image
 representation and regenerates its description. Reservations are content-hashed
 per owner including selected indices: exact retries reuse their record, but new
 selections count toward the existing daily limit of ten image reservations. Frame
-edits do not alter existing challenges. Selection is frozen when creating a draft.
+edits do not alter existing challenges. The uploaded representation stays immutable. [Editing an unpublished challenge](challenge-editing.md) can replace its image reference: reselect the GIF and confirm a new frame selection. Changing that reference invalidates its AI opponent; the replacement GIF needs its own moderator approval.
 
 ## Deploy
 

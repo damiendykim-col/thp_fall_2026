@@ -3,7 +3,7 @@ import ChallengeForm from "./challenge-form";
 import { uploadChallengeImage, suggestImageDescription, restoreChallengeImage } from "../image-actions";
 
 jest.mock("next/navigation", () => ({ useRouter: () => ({ push: jest.fn() }) }));
-jest.mock("../actions", () => ({ createChallenge: jest.fn() }));
+jest.mock("../actions", () => ({ createChallenge: jest.fn(), updateChallenge: jest.fn() }));
 jest.mock("../image-actions", () => ({ uploadChallengeImage: jest.fn(), suggestImageDescription: jest.fn(), restoreChallengeImage: jest.fn() }));
 beforeEach(() => {
   jest.clearAllMocks();
@@ -192,4 +192,24 @@ test("a late restore response cannot overwrite a replacement image choice", asyn
   await act(async () => resolve({ url: "https://example.com/old.jpg" }));
   expect(screen.queryByRole("img", { name: "Selected challenge image" })).toBeNull();
   expect(screen.getByRole("button", { name: "Create draft" })).toBeDisabled();
+});
+
+
+test("edit recovery is separate from new creation and cannot replay across revisions", () => {
+  const templates = [{ id: "t1", description: "A scene", image_url: "https://example.com/a.jpg", created_at: "2026-01-01" }];
+  const initial = { source: "template", template: "t1", imageId: "", submission: "", description: "A scene", suggestion: "", context: "Monday", caption: "Saved joke", manual: false, confirmed: true, needsFile: false, imageReady: false };
+  const first = render(<ChallengeForm userId="user-1" templates={templates} />);
+  fireEvent.change(screen.getByLabelText("Your caption"), { target: { value: "Separate new challenge" } });
+  first.unmount();
+  const edit = render(<ChallengeForm userId="user-1" templates={templates} editing={{ id: "c1", revision: 0, initial }} />);
+  expect(screen.getByLabelText("Your caption")).toHaveValue("Saved joke");
+  fireEvent.change(screen.getByLabelText("Your caption"), { target: { value: "Unfinished edit" } });
+  edit.unmount();
+  const newer = render(<ChallengeForm userId="user-1" templates={templates} editing={{ id: "c1", revision: 1, initial: { ...initial, caption: "New server version" } }} />);
+  expect(screen.getByLabelText("Your caption")).toHaveValue("New server version");
+  fireEvent.click(screen.getByRole("button", { name: "Discard edits" }));
+  expect(sessionStorage.getItem("meme-club:challenge-draft:user-1:edit:c1:1")).toBeNull();
+  newer.unmount();
+  render(<ChallengeForm userId="user-1" templates={templates} />);
+  expect(screen.getByLabelText("Your caption")).toHaveValue("Separate new challenge");
 });

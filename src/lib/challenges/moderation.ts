@@ -126,7 +126,8 @@ export async function reviewChallenge(owner: string, id: string, includeAI: bool
   const humanId = await ensureModerated(owner, "human", humanReviewText(description, context, human.body), bytes);
   const updates: Record<string, string | null> = { human_moderation_id: humanId, asset_moderation_id: assetId };
   if (includeAI && ai) updates.ai_moderation_id = await ensureModerated(owner, "ai", humanReviewText(description, context, ai.body), bytes);
-  const { error: updateError } = await admin.from("challenges").update(updates).eq("id", id).eq("creator_id", owner).is("hidden_at", null);
+  const { data: updated, error: updateError } = await admin.from("challenges").update(updates).eq("id", id).eq("creator_id", owner).eq("revision", challenge.revision).is("hidden_at", null).select("id").maybeSingle();
+  if (!updateError && !updated) throw new ModerationError("This draft changed during safety review. Reload and retry.");
   if (updateError) throw new ModerationError(unavailable);
   let frames: number[] | undefined;
   if (challenge.image_id) {

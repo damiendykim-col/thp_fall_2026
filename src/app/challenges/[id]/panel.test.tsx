@@ -16,3 +16,10 @@ test("keeps checking authoritative results if the first deadline refresh is earl
   act(()=>jest.advanceTimersByTime(10000));
   expect(refresh).toHaveBeenCalledTimes(2);
 });
+
+test.each([['draft', true], ['ready', true], ['failed', true], ['generating', false], ['published', false]])('editing is offered only for idle unpublished owners: %s', (status, editable) => {
+  jest.mocked(useRouter).mockReturnValue({ refresh: jest.fn() } as unknown as ReturnType<typeof useRouter>);
+  const c = { id: 'c', own: true, status, situation: 'scene', image_path: null, template_url: null, closes_at: null, closed: false, vote: null, captions: [] };
+  const { queryByRole } = render(<ChallengePanel challenge={c} />);
+  expect(Boolean(queryByRole('link', { name: 'Edit challenge' }))).toBe(editable);
+});

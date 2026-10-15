@@ -13,7 +13,8 @@ Gemini description quality separately from schema and mock-provider checks.
    or choose **Write my own description**. Confirmation is always explicit;
    editing the description or changing the image clears confirmation.
 3. **Add context for the joke** is optional and separate from visual description.
-4. Creating the draft freezes the confirmed description, context, and human caption.
+4. Creating the draft snapshots the confirmed description, context, and human caption.
+   Owners can [edit unpublished drafts](challenge-editing.md); published content stays fixed.
    Both caption candidates use that shared context; the human answer is never sent
    to the caption generator.
 
@@ -37,7 +38,8 @@ There is no automatic paid retry of failed description generation.
 Before **Create draft**, text, selected template or saved upload ID, description
 review choices, and the submission ID are stored in account-scoped `sessionStorage`.
 They survive navigation and refresh within the tab. This is browser recovery, not
-an editable database challenge; creating a draft still freezes its content.
+the database challenge. After creation, use **Edit challenge** to revise an
+unpublished draft. Edit recovery is scoped to its challenge and saved revision.
 
 File bytes, GIF preview frames, blob URLs, and signed URLs are never stored.
 A local GIF whose frames have not been saved needs file reselection on return;
