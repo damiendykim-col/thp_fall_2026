@@ -9,7 +9,7 @@ import { requireUser } from "@/lib/auth";
 import { challengeAdmin, normalizeChallengeImage } from "@/lib/challenges/server";
 import { descriptionPrompt, generateDescription, generationConfig } from "@/lib/challenges/generation";
 
-import { ensureModerated, moderationMessage } from "@/lib/challenges/moderation";
+import { ensureModerated, isModerationEnabled, moderationMessage } from "@/lib/challenges/moderation";
 
 export type ImageReviewResult = {
   id?: string;
@@ -72,8 +72,10 @@ export async function suggestImageDescription(id: string): Promise<ImageReviewRe
   const admin = challengeAdmin();
   const { data: image, error } = await admin.from("challenge_images").select("*").eq("id", id).eq("owner_id", user.id).single();
   if (error || !image?.upload_ready) return { error: "Image unavailable." };
-  const { data: safe, error: safetyError } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
-  if (safetyError || !safe) return { error: "The image must pass safety checking before description or manual review. Retry this image." };
+  if (isModerationEnabled()) {
+    const { data: safe, error: safetyError } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
+    if (safetyError || !safe) return { error: "The image must pass safety checking before description or manual review. Retry this image." };
+  }
   if (image.description_status === "succeeded") return { id, description: image.suggested_description };
   if (image.description_status === "failed" || image.confirmed_description) return fallback;
   if (image.description_status === "running") {
@@ -113,8 +115,10 @@ export async function restoreChallengeImage(id: string): Promise<{ url?: string;
   const { data: image, error } = await admin.from("challenge_images")
     .select("storage_path,upload_ready,moderation_id").eq("id", id).eq("owner_id", user.id).single();
   if (error || !image?.upload_ready) return { error: "Your saved image is unavailable. Choose it again; your text has been kept." };
-  const { data: safe, error: safetyError } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
-  if (safetyError || !safe) return { error: "Your saved image needs another safety check. Choose it again; your text has been kept." };
+  if (isModerationEnabled()) {
+    const { data: safe, error: safetyError } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
+    if (safetyError || !safe) return { error: "Your saved image needs another safety check. Choose it again; your text has been kept." };
+  }
   const { data, error: signingError } = await admin.storage.from("challenge-images").createSignedUrl(image.storage_path, 3600);
   return signingError || !data ? { error: "Your saved image could not be loaded. Choose it again; your text has been kept." } : { url: data.signedUrl };
 }

@@ -9,6 +9,8 @@ content will be detected or that a moderator is continuously monitoring reports.
 
 ## Policy and user experience
 
+Automated moderation can be toggled via the `MODERATION_ENABLED` environment variable (set to `false` to disable automated safety checks). When disabled, checks are automatically approved without contacting the LLM provider.
+
 `moderation-v1` permits dark humor, satire, profanity, fictional absurdity, and
 non-graphic adult jokes by themselves. It blocks protected-group hate, targeted
 harassment, threats/encouragement of violence or graphic gore, explicit or exploitative

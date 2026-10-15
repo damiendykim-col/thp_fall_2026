@@ -6,12 +6,7 @@ import { AVATAR_TYPES, MAX_AVATAR_BYTES, validateFavoriteJoke, validateNames } f
 
 export type ProfileResult = { error?: string; success?: boolean };
 
-function explainSaveFailure(error: unknown): string {
-  const detail = typeof error === "object" && error !== null && "message" in error && typeof error.message === "string"
-    ? error.message.trim()
-    : "";
-  return detail ? `Your profile couldn’t be saved. ${detail}` : "Your profile couldn’t be saved. Please reload to check your changes before trying again.";
-}
+const SAVE_FAILURE = "Your profile couldn’t be saved. Please reload to check your changes before trying again.";
 
 export async function saveProfile(_previous: ProfileResult, form: FormData): Promise<ProfileResult> {
   const { supabase, user } = await requireUser();
@@ -55,16 +50,17 @@ export async function saveProfile(_previous: ProfileResult, form: FormData): Pro
     });
     saved = response.data as string | null;
     error = response.error;
-  } catch (rpcError) {
-    return { error: explainSaveFailure(rpcError) };
+  } catch {
+    // The transaction may have committed before the response was lost. Keep uploads.
+    return { error: SAVE_FAILURE };
   }
   if (error || saved !== user.id) {
     // Only a definite database rejection proves the upload was not committed.
     // A lost response may follow a successful commit; never delete that photo.
-    if (newPath && error && ["22023", "23503", "23514", "42501", "P0001"].includes(error.code)) {
+    if (newPath && error && ["22023", "23503", "23514", "42501", "P0001"].includes(error.code ?? "")) {
       await supabase.storage.from("avatars").remove([newPath]);
     }
-    return { error: explainSaveFailure(error) };
+    return { error: SAVE_FAILURE };
   }
   revalidatePath("/profile");
   revalidatePath("/members");

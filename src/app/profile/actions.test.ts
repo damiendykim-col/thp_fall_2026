@@ -94,7 +94,8 @@ it("does not report success for an unexpected RPC response", async () => {
 });
 it("surfaces thrown RPC failures as an action error", async () => {
   rpc.mockRejectedValue(new Error("fetch failed"));
-  expect(await saveProfile({}, form())).toEqual({ error: "Your profile couldn’t be saved. fetch failed" });
+  expect(await saveProfile({}, withPhoto())).toEqual({ error: "Your profile couldn’t be saved. Please reload to check your changes before trying again." });
+  expect(remove).not.toHaveBeenCalled();
   expect(revalidatePath).not.toHaveBeenCalled();
 });
 it("clears an empty joke without changing the current photo", async () => {
@@ -132,4 +133,9 @@ it("rejects conflicting upload and collection selections", async () => {
   const data = withPhoto(); data.set("previous_avatar", "owner/old.png");
   expect(await saveProfile({}, data)).toHaveProperty("error");
   expect(rpc).not.toHaveBeenCalled(); expect(upload).not.toHaveBeenCalled();
+});
+
+it("does not expose database error details to the browser", async () => {
+  rpc.mockResolvedValue({ data: null, error: { code: "42501", message: "private table detail" } });
+  expect(await saveProfile({}, form())).toEqual({ error: "Your profile couldn’t be saved. Please reload to check your changes before trying again." });
 });
