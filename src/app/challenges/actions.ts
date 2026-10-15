@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { challengeAdmin } from "@/lib/challenges/server";
 import { captionPrompt, generateCaption, generationConfig } from "@/lib/challenges/generation";
-import { ensureModerated, humanReviewText, moderationMessage, ModerationError, requireTemplateReview, reviewChallenge } from "@/lib/challenges/moderation";
+import { ensureModerated, humanReviewText, isModerationEnabled, moderationMessage, ModerationError, requireTemplateReview, reviewChallenge } from "@/lib/challenges/moderation";
 import type { ChallengeResult } from "@/lib/challenges/types";
 
 export async function createChallenge(_: ChallengeResult, form: FormData): Promise<ChallengeResult> {
@@ -26,8 +26,10 @@ export async function createChallenge(_: ChallengeResult, form: FormData): Promi
     if (imageId) {
       const { data: image } = await admin.from("challenge_images").select("storage_path,moderation_id,upload_ready").eq("id", imageId).eq("owner_id", user.id).single();
       if (!image?.upload_ready) throw new ModerationError("Image unavailable.");
-      const { data: safe } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
-      if (!safe) throw new ModerationError("The image must pass safety checking first.");
+      if (isModerationEnabled()) {
+        const { data: safe } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
+        if (!safe) throw new ModerationError("The image must pass safety checking first.");
+      }
       const { data: file, error: downloadError } = await admin.storage.from("challenge-images").download(image.storage_path);
       if (downloadError || !file) throw new ModerationError("The image could not be checked. Please retry.");
       imageBytes = Buffer.from(await file.arrayBuffer());
@@ -71,8 +73,10 @@ export async function updateChallenge(id: string, revision: number, _: Challenge
     if (imageId) {
       const { data: image } = await admin.from("challenge_images").select("storage_path,upload_ready,moderation_id").eq("id", imageId).eq("owner_id", user.id).single();
       if (!image?.upload_ready) throw new ModerationError("Image unavailable.");
-      const { data: safe } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
-      if (!safe) throw new ModerationError("The image must pass safety checking first.");
+      if (isModerationEnabled()) {
+        const { data: safe } = await admin.rpc("safety_approved", { p_check: image.moderation_id, p_owner: user.id, p_phase: "image" });
+        if (!safe) throw new ModerationError("The image must pass safety checking first.");
+      }
       const { data: file, error } = await admin.storage.from("challenge-images").download(image.storage_path);
       if (error || !file) throw new ModerationError("The image could not be checked. Please retry.");
       bytes = Buffer.from(await file.arrayBuffer());

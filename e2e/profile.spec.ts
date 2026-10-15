@@ -12,6 +12,12 @@ test("signup triggers, onboarding, session persistence and sign-out", async ({ p
   await expect(page).toHaveURL(/\/profile$/);
   await expect(page.getByText("Complete your profile by adding your first and last name.")).toBeVisible();
   await completeProfile(page);
+  const savedIdentity = await account.client.from("profiles").select("first_name,last_name").single();
+  expect(savedIdentity.error).toBeNull();
+  expect(savedIdentity.data).toEqual({ first_name: "PrivateFirst", last_name: "PrivateLast" });
+  const savedMember = await account.client.from("member_profiles").select("favorite_joke,is_listed").single();
+  expect(savedMember.error).toBeNull();
+  expect(savedMember.data).toEqual({ favorite_joke: "A SQL query walks into a bar.", is_listed: true });
   await page.getByRole("link", { name: "Continue to challenges" }).click();
   await expect(page).toHaveURL(/\/challenges$/);
   await page.goto("/members");

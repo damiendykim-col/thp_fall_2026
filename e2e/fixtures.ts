@@ -72,6 +72,7 @@ export async function completeProfile(page: Page, joke = "A SQL query walks into
   if (await alert.isVisible()) {
     throw new Error(`Profile save failed: ${(await alert.textContent())?.trim() ?? "unknown error"}`);
   }
+  await expect(saved).toBeVisible();
 }
 export const gif = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
 
