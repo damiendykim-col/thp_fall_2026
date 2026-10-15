@@ -19,6 +19,12 @@ export default function ChallengeForm(props: FormProps) {
 function AccountChallengeForm({ userId, templates, editing }: FormProps) {
   const storageKey = editing ? `${userId}:edit:${editing.id}:${editing.revision}` : userId;
   const router = useRouter();
+  const [step, setStep] = useState<1 | 2>(1);
+  const stepHeading = useRef<HTMLHeadingElement>(null);
+  function changeStep(next: 1 | 2) {
+    setStep(next);
+    requestAnimationFrame(() => stepHeading.current?.focus());
+  }
   const [state, action, pending] = useActionState(async (previous: ChallengeResult, form: FormData) => {
     const result = editing
       ? await updateChallenge(editing.id, editing.revision, previous, form)
@@ -186,6 +192,7 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
       router.push(`/challenges/${editing.id}`);
       return;
     }
+    setStep(1);
     resetReview(); setCaption(""); setContext(""); setSource("upload"); setTemplate(""); setPreview("");
     selectedFile.current = null;
     if (fileInput.current) fileInput.current.value = "";
@@ -196,8 +203,20 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
   const imageUrl = source === "upload" ? preview : templates.find(t => t.id === template)?.image_url;
 
   return (
-    <form action={action} className="challenge-form">
-      <p className="muted">Images and captions must pass safety checks before publication. Dark humor and satire are welcome; targeted abuse and harmful content are not. If a check fails, revise the content or retry later.</p>
+    <form action={action} className="challenge-form" onSubmit={e => {
+      if (!editing && step !== 2) e.preventDefault();
+    }}>
+      {!editing && <>
+        <nav aria-label="Challenge creation progress" className="creation-progress">
+          <button type="button" aria-current={step === 1 ? "step" : undefined} disabled={pending} onClick={() => changeStep(1)}>1. Image</button>
+          <button type="button" aria-current={step === 2 ? "step" : undefined} disabled={pending} onClick={() => changeStep(2)}>2. Your caption</button>
+          <span>3. AI opponent &amp; publish</span>
+        </nav>
+        <h2 ref={stepHeading} tabIndex={-1}>{step === 1 ? "Choose and review your image" : "Write your contender"}</h2>
+      </>}
+      {draftNotice && <p role="status">{draftNotice}</p>}
+      <div className="creation-stage" hidden={!editing && step !== 1}>
+      <p className="muted">Choose an image you have permission to share, then confirm what the AI sees.</p>
       <p className="muted">When you select an upload, its image is sent to Google Gemini to suggest a description. Review it before continuing, or write your own if generation fails. Google’s free API tier may use submitted content to improve its products.</p>
       <label>Image source
         <select aria-label="Image source" value={source} disabled={pending} onChange={e => { resetReview(); selectedFile.current = null; setPreview(""); setTemplate(""); setSource(e.target.value); }}>
@@ -225,7 +244,6 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {imageUrl && <img className="challenge-image" src={imageUrl} alt="Selected challenge image" />}
       {storyboard && <FrameReview key={preview} data={storyboard} onConfirm={confirmFrames} onChange={() => { requestVersion.current += 1; setImageReady(false); setNeedsFile(true); setImageId(""); setDescription(""); setSuggestion(""); setConfirmed(false); setManual(false); }} notice="Confirming saves these frames and requests an AI description. A moderator must review the full GIF before publication." />}
-      {draftNotice && <p role="status">{draftNotice}</p>}
       {needsFile && !selectedFile.current && <p role="status">Choose your local file again to continue. File contents are not stored in your browser draft.</p>}
       {imageId && !imageReady && !imageStatus && <p className="muted">Upload saved; description review is not complete.</p>}
       {imageError && imageId && !imageReady && !imageStatus && <button className="button" type="button" disabled={pending} onClick={() => startTransition(() => reviewImage(imageId, requestVersion.current))}>Retry description</button>}
@@ -253,19 +271,30 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
           </label>
         </div>
       </details>
-      <label>Add context for the joke (optional)
-        <textarea name="context" value={context} onChange={e => setContext(e.target.value)} maxLength={500} placeholder="For example: finding out the assignment was a group project." />
-      </label>
+      {ready && !confirmed && !imageStatus && <p className="field-help">Open “Review image understanding” above and confirm the scene to continue.</p>}
+      {!editing && <button type="button" className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed} onClick={() => changeStep(2)}>Continue to caption</button>}
+      </div>
+      <div className="creation-stage" hidden={!editing && step !== 2}>
+      {!editing && imageUrl && <div className="caption-image-preview">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageUrl} alt="Your caption’s image" />
+        <button type="button" className="button" disabled={pending} onClick={() => changeStep(1)}>Back to image</button>
+      </div>}
+      {!editing && !imageUrl && <button type="button" className="button" onClick={() => changeStep(1)}>Back to image</button>}
       <label>Your caption
-        <textarea name="caption" value={caption} onChange={e => setCaption(e.target.value)} required maxLength={280} placeholder="Your best line, up to 280 characters." />
+        <textarea name="caption" value={caption} disabled={pending} onChange={e => setCaption(e.target.value)} required maxLength={280} placeholder="Your best line, up to 280 characters." />
+      </label>
+      <label>Add context for the joke (optional)
+        <textarea name="context" disabled={pending} value={context} onChange={e => setContext(e.target.value)} maxLength={500} placeholder="For example: finding out the assignment was a group project." />
       </label>
       <p className="muted">The confirmed description and optional joke context accompany the image when generating your opponent. Your caption is sent separately to Gemini for safety checking, but never to the opponent-caption generator.</p>
-      <p className="muted">Publish only images you have permission to share. Challenges are visible to signed-in users; attribution and results appear after 24 hours. Published challenges cannot be edited.</p>
+      <p className="muted">Dark humor and satire are welcome; targeted abuse and harmful content are not. Your draft must pass safety checks. Next, generate your AI opponent and review both captions before publishing.</p>
       {state.error && <p role="alert">{state.error}</p>}
-      {ready && !confirmed && !imageStatus && <p className="field-help">Open “Review image understanding” above and confirm the scene to continue.</p>}
+      {!editing && (!ready || !confirmed || Boolean(imageStatus)) && <p role="status">Finish image review in step 1 before creating your draft. Your caption will be kept.</p>}
+      <button className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed || !caption.trim()}>{pending ? "Saving…" : editing ? "Save changes" : "Create draft"}</button>
+      </div>
       <p className="muted">Unfinished text and saved image references are kept in this browser tab until you save, discard them, or sign out. Local files must be selected again.</p>
       <button className="button" type="button" disabled={pending || Boolean(imageStatus)} onClick={discard}>{editing ? "Discard edits" : "Discard unfinished challenge"}</button>
-      <button className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed || !caption.trim()}>{pending ? "Saving…" : editing ? "Save changes" : "Create draft"}</button>
     </form>
   );
 }

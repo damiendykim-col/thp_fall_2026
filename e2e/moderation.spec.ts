@@ -11,14 +11,17 @@ test("blocked text and unavailable checks leave an editable form and never creat
   await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("Image description", { exact: true }).fill("A surprised cartoon character.");
   await page.getByLabel("I confirm this image description").check();
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("[[test:block]]");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("targeted harassment");
   expect((await owner.client.from("challenges").select("id")).data).toEqual([]);
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("[[test:unavailable]]");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("Safety checking is unavailable");
   expect((await owner.client.from("challenges").select("id")).data).toEqual([]);
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("My optimism requested a leave of absence.");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
@@ -88,6 +91,7 @@ test("template visual review is moderator-only and can be completed from the que
   await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("Image description", { exact: true }).fill("A scene.");
   await page.getByLabel("I confirm this image description").check();
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("A caption.");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page.getByRole("main").getByRole("alert")).toContainText("visual review");

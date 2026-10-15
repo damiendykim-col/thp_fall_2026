@@ -260,3 +260,17 @@ select { background: #0c0c0c; border: 1px solid var(--border); border-radius: 4p
 .gif-frame img { display: block; width: 100%; height: 80px; object-fit: contain; }
 .gif-frame span { display: block; margin-top: 6px; font-size: 12px; }
 .gif-moment { width: 200px; max-width: 100%; height: 200px; object-fit: contain; background: #151515; }
+
+/* Creation stages keep recovery mounted while showing one task at a time. */
+.creation-stage { display: grid; gap: 1.5rem; }
+.creation-stage[hidden] { display: none; }
+.creation-progress { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; font-size: .9rem; }
+.creation-progress button, .creation-progress span { padding: .6rem .8rem; border-radius: .4rem; border: 1px solid var(--border); }
+.creation-progress button { cursor: pointer; }
+.creation-progress [aria-current="step"] { color: var(--accent); border-color: var(--accent); }
+.creation-progress span { color: var(--muted); }
+.caption-image-preview { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
+.caption-image-preview img { max-width: 10rem; max-height: 10rem; object-fit: contain; border-radius: .4rem; }
+
+.creation-progress li { list-style: none; padding: .6rem .8rem; border: 1px solid var(--border); border-radius: .4rem; }
+ol.creation-progress { padding: 0; }

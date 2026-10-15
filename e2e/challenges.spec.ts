@@ -12,10 +12,11 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   await page.getByLabel("Challenge image").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: boundaryImage });
   await page.getByText("Review image understanding", { exact: true }).click();
   await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
-  await page.getByLabel("Your caption").fill("My syllabus has entered its villain era.");
-  await expect(page.getByRole("button", { name: "Create draft", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Continue to caption" })).toBeDisabled();
   await page.getByLabel("I confirm this image description").check();
+  await page.getByRole("button", { name: "Continue to caption" }).click();
   await page.getByLabel("Add context for the joke (optional)").fill("When the midterm is tomorrow and the weekend was yesterday.");
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("My syllabus has entered its villain era.");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
@@ -156,8 +157,9 @@ test("image review preserves the AI original, supports edits/replacement and reu
     if (mode === "replaced") await page.getByRole("button", { name: "Write my own description" }).click();
     await page.getByLabel("Image description", { exact: true }).fill(`My ${mode} visual description.`);
     await expect(page.getByLabel("I confirm this image description")).not.toBeChecked();
-    await page.getByLabel("Your caption").fill(`My ${mode} joke.`);
     await page.getByLabel("I confirm this image description").check();
+    await page.getByRole("button", { name: "2. Your caption" }).click();
+    await page.getByLabel("Your caption").fill(`My ${mode} joke.`);
     await page.getByRole("button", { name: "Create draft", exact: true }).click();
     await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
     const { data: image } = await owner.client.from("challenge_images").select("*").single();
@@ -187,6 +189,7 @@ test("template descriptions need confirmation and review RPCs enforce identity a
   await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("Image description", { exact: true }).fill("A template's visible scene.");
   await page.getByLabel("I confirm this image description").check();
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("Human answer not shared with Gemini.");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
@@ -228,6 +231,7 @@ test("an image with failed analysis can be manually described and used without a
   await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("Image description", { exact: true }).fill("A yellow square.");
   await page.getByLabel("I confirm this image description").check();
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("A square deal.");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);

@@ -19,11 +19,13 @@ test("GIF selection is saved, used by generation and gated by independent modera
   await page.getByText("Review image understanding",{exact:true}).click();
   await expect(page.getByLabel("Image description",{exact:true})).toHaveValue("A yellow square fills the image.");
   await page.getByLabel("I confirm this image description").check();
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("My week has twelve stages of denial.");
   // The saved GIF and frame selection survive navigation without another upload.
   await page.reload();
+  await page.getByRole("button", { name: "Continue to caption" }).click();
   await expect(page.getByRole("button",{name:"Create draft",exact:true})).toBeEnabled();
-  await expect(page.getByRole("img",{name:"Selected challenge image"})).toBeVisible();
+  await expect(page.getByRole("img",{name:"Your caption’s image"})).toBeVisible();
   await page.getByRole("button",{name:"Create draft",exact:true}).click();
   await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
   const id=page.url().split("/").pop()!;

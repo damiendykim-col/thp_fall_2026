@@ -11,22 +11,24 @@ test("an uploaded challenge restores after navigation and clears after creation"
   await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
   await page.getByLabel("Image description", { exact: true }).fill("A bright yellow square.");
   await page.getByLabel("I confirm this image description").check();
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("My optimism has corners.");
   await page.getByLabel("Add context for the joke (optional)").fill("Monday morning");
   const submission = await page.locator('input[name="submission"]').inputValue();
   await page.goto("/");
   await page.goto("/challenges/new");
+  await page.getByRole("button", { name: "Continue to caption" }).click();
   await expect(page.getByRole("button", { name: "Create draft", exact: true })).toBeEnabled();
   await expect(page.getByLabel("Your caption")).toHaveValue("My optimism has corners.");
   await expect(page.getByLabel("Add context for the joke (optional)")).toHaveValue("Monday morning");
   await expect(page.locator('input[name="submission"]')).toHaveValue(submission);
-  await expect(page.getByRole("img", { name: "Selected challenge image" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Your caption’s image" })).toBeVisible();
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
   expect((await owner.client.from("challenge_images").select("id")).data).toHaveLength(1);
   await page.goto("/challenges/new");
   await expect(page.getByLabel("Your caption")).toHaveValue("");
-  await expect(page.getByRole("img", { name: "Selected challenge image" })).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "Your caption’s image" })).toHaveCount(0);
 });
 
 test("an unconfirmed GIF requires reselection, and discard and sign-out clear recovery", async ({ page, accounts }) => {
@@ -35,14 +37,16 @@ test("an unconfirmed GIF requires reselection, and discard and sign-out clear re
   await page.goto("/challenges/new");
   await page.getByLabel("Challenge image").setInputFiles({ name: "local.gif", mimeType: "image/gif", buffer: gif });
   await expect(page.getByRole("button", { name: "Use these frames", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("An unfinished joke");
   await page.reload();
   await expect(page.getByText(/Choose your local file again/)).toBeVisible();
   await expect(page.getByLabel("Your caption")).toHaveValue("An unfinished joke");
-  await expect(page.getByRole("button", { name: "Create draft", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Continue to caption" })).toBeDisabled();
   await page.getByRole("button", { name: "Discard unfinished challenge" }).click();
   await page.reload();
   await expect(page.getByLabel("Your caption")).toHaveValue("");
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("Private draft");
   await page.getByText("Account", { exact: true }).click();
   await page.getByRole("button", { name: "Sign out" }).click();

@@ -22,9 +22,9 @@ test("a suggestion needs explicit confirmation, and editing invalidates confirma
   upload();
   await waitFor(() => expect(screen.getByLabelText("Image description")).toHaveValue("A yellow square."));
   fireEvent.change(screen.getByLabelText("Your caption"), { target: { value: "My joke." } });
-  expect(screen.getByRole("button", { name: "Create draft" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeDisabled();
   fireEvent.click(screen.getByLabelText("I confirm this image description"));
-  expect(screen.getByRole("button", { name: "Create draft" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeEnabled();
   fireEvent.change(screen.getByLabelText("Image description"), { target: { value: "A yellow rectangle." } });
   expect(screen.getByLabelText("I confirm this image description")).not.toBeChecked();
 });
@@ -36,7 +36,7 @@ test("failed analysis allows manual description without reuploading", async () =
   fireEvent.change(screen.getByLabelText("Image description"), { target: { value: "A square." } });
   fireEvent.change(screen.getByLabelText("Your caption"), { target: { value: "My joke." } });
   fireEvent.click(screen.getByLabelText("I confirm this image description"));
-  expect(screen.getByRole("button", { name: "Create draft" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeEnabled();
   expect(uploadChallengeImage).toHaveBeenCalledTimes(1);
 });
 test("an upload response cannot overwrite a newly selected template", async () => {
@@ -61,14 +61,14 @@ test("an interrupted request can retry the selected image without reopening the 
   expect(uploadChallengeImage).toHaveBeenCalledTimes(1);
 });
 
-test("image understanding is collapsed with a clear review status while joke context stays visible", async () => {
+test("image understanding is collapsed with a clear review status while joke writing has its own stage", async () => {
   render(<ChallengeForm userId="user-1" templates={[]} />);
   upload();
   await waitFor(() => expect(screen.getByLabelText("Image description")).toHaveValue("A yellow square."));
   const review = screen.getByText("Review image understanding").closest("details")!;
   expect(review).not.toHaveAttribute("open");
   expect(screen.getByText("Confirmation needed")).toBeVisible();
-  expect(screen.getByLabelText("Add context for the joke (optional)")).toBeVisible();
+  expect(screen.getByLabelText("Add context for the joke (optional)")).not.toBeVisible();
   fireEvent.click(screen.getByText("Review image understanding"));
   fireEvent.click(screen.getByLabelText("I confirm this image description"));
   expect(screen.getByText("Confirmed")).toBeVisible();
@@ -137,7 +137,7 @@ test("saved upload and edited review restore without persisting bytes or URLs", 
   expect(stored).not.toContain("data:");
   first.unmount();
   render(<ChallengeForm userId="user-1" templates={[]} />);
-  await waitFor(() => expect(screen.getByRole("button", { name: "Create draft" })).toBeEnabled());
+  await waitFor(() => expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeEnabled());
   expect(restoreChallengeImage).toHaveBeenCalledWith("image-1");
   expect(screen.getByLabelText("Image description")).toHaveValue("My edited scene.");
   expect(screen.getByLabelText("I confirm this image description")).toBeChecked();
@@ -157,7 +157,7 @@ test("unconfirmed local GIF requires reselection but preserves the joke", async 
   render(<ChallengeForm userId="user-1" templates={[]} />);
   expect(screen.getByText(/Choose your local file again/)).toBeVisible();
   expect(screen.getByLabelText("Your caption")).toHaveValue("Keep me");
-  expect(screen.getByRole("button", { name: "Create draft" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeDisabled();
   expect(restoreChallengeImage).not.toHaveBeenCalled();
 });
 
@@ -170,12 +170,12 @@ test("template review survives reload, and a missing template keeps text but req
   fireEvent.click(screen.getByLabelText("I confirm this image description"));
   first.unmount();
   const second = render(<ChallengeForm userId="user-1" templates={templates} />);
-  expect(screen.getByRole("button", { name: "Create draft" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeEnabled();
   expect(screen.getByLabelText("Gallery template")).toHaveValue("t1");
   second.unmount();
   render(<ChallengeForm userId="user-1" templates={[]} />);
   expect(screen.getByLabelText("Your caption")).toHaveValue("My joke");
-  expect(screen.getByRole("button", { name: "Create draft" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeDisabled();
 });
 
 test("a late restore response cannot overwrite a replacement image choice", async () => {
@@ -191,7 +191,7 @@ test("a late restore response cannot overwrite a replacement image choice", asyn
   fireEvent.change(screen.getByLabelText("Image source"), { target: { value: "template" } });
   await act(async () => resolve({ url: "https://example.com/old.jpg" }));
   expect(screen.queryByRole("img", { name: "Selected challenge image" })).toBeNull();
-  expect(screen.getByRole("button", { name: "Create draft" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeDisabled();
 });
 
 
@@ -212,4 +212,22 @@ test("edit recovery is separate from new creation and cannot replay across revis
   newer.unmount();
   render(<ChallengeForm userId="user-1" templates={templates} />);
   expect(screen.getByLabelText("Your caption")).toHaveValue("Separate new challenge");
+});
+
+test("creation starts with image review, preserves a caption across stages, and invalidates a changed scene", async () => {
+  render(<ChallengeForm userId="user-1" templates={[]} />);
+  expect(screen.getByRole("button", { name: "Continue to caption" })).toBeDisabled();
+  expect(screen.getByLabelText("Your caption")).not.toBeVisible();
+  upload();
+  await waitFor(() => expect(screen.getByLabelText("Image description")).toHaveValue("A yellow square."));
+  fireEvent.click(screen.getByLabelText("I confirm this image description"));
+  fireEvent.click(screen.getByRole("button", { name: "Continue to caption" }));
+  expect(screen.getByLabelText("Your caption")).toBeVisible();
+  fireEvent.change(screen.getByLabelText("Your caption"), { target: { value: "A square deal" } });
+  fireEvent.click(screen.getByRole("button", { name: "Back to image" }));
+  fireEvent.change(screen.getByLabelText("Image description"), { target: { value: "A different scene" } });
+  expect(screen.getByRole("button", { name: "Continue to caption" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "2. Your caption" }));
+  expect(screen.getByLabelText("Your caption")).toHaveValue("A square deal");
+  expect(screen.getByRole("button", { name: "Create draft", hidden: true })).toBeDisabled();
 });

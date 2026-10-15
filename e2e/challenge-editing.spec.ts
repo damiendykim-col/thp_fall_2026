@@ -63,6 +63,7 @@ test("creator can edit a populated draft, keep AI for caption edits, and regener
   await page.getByLabel("Gallery template").selectOption(option!);
   await page.getByText("Review image understanding", { exact: true }).click();
   await page.getByLabel("I confirm this image description").check();
+  await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("My original joke");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(page).toHaveURL(/\/challenges\/[0-9a-f-]+$/);
