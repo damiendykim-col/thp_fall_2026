@@ -127,8 +127,14 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
       console.error("finish_caption_generation failed", { code: saveError.code });
       throw new Error("The caption could not be saved. Please retry.");
     }
-    const { error: approvalError } = await admin.from("challenges").update({ ai_moderation_id: aiCheck }).eq("id", id).eq("creator_id", user.id).eq("revision", revision!);
-    if (approvalError) throw new Error("The safety result could not be saved. Please retry publication.");
+    let approvalQuery = admin.from("challenges").update({ ai_moderation_id: aiCheck }).eq("id", id).eq("creator_id", user.id).is("hidden_at", null);
+    if (typeof revision === "number") {
+      approvalQuery = approvalQuery.eq("revision", revision);
+    }
+    const { data: updatedApproval, error: approvalError } = await approvalQuery.select("id").maybeSingle();
+    if (approvalError || !updatedApproval) {
+      throw new Error("The safety result could not be saved. Please retry publication.");
+    }
     revalidatePath(`/challenges/${id}`);
     return {};
   } catch (e) {
