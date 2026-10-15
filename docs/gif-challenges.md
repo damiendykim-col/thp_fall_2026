@@ -26,7 +26,7 @@ available, but is no longer needed to create a GIF challenge.
    publication approval. Approval is attached to the immutable image record.
 6. Publication requires both the existing automated checks and the separate GIF
    review. The database enforces the latter even through direct publish RPC calls.
-   A rejected GIF requires a revised challenge using another image.
+   A rejected GIF can be replaced by editing the unpublished challenge.
 
 Changing confirmed frames before draft creation makes a new immutable image
 representation and regenerates its description. Reservations are content-hashed
@@ -36,16 +36,16 @@ edits do not alter existing challenges. The uploaded representation stays immuta
 
 ## Deploy
 
-Apply `supabase/migrations/202610090001_gif_challenges.sql` using the Supabase SQL
-editor **before** deploying the app changes. This migration extends image metadata,
+`supabase/migrations/202610090001_gif_challenges.sql` is part of the canonical
+sequence. Follow [deployment](deployment.md); do not rerun an applied migration. This migration extends image metadata,
 updates the existing challenge bucket's allowed MIME types, and adds a moderator
 review queue and database publication gate. The extended reservation RPC preserves
 old callers through default arguments. No existing image records or challenges
 are removed. Avatar handling is unchanged.
 
-The isolated local database has been migrated for testing. Hosted Supabase has not
-been modified by this work. Use an existing moderator account; role setup remains
-in `docs/moderation.md`. If no moderator is available, GIF drafts can generate but
+Local replay is covered by E2E; the October 10 record above confirms the hosted
+GIF migration at that time. Use an existing moderator account; role setup remains
+in [moderation](moderation.md). If no moderator is available, GIF drafts can generate but
 cannot be published. Test providers do not auto-approve the manual review gate.
 
 Server Actions allow 4 MiB requests to accommodate multipart overhead for a 3 MiB

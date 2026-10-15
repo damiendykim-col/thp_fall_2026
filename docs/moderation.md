@@ -25,7 +25,8 @@ for self-harm, and exposed private information/nonconsensual intimate content.
   in SQL. Calling the publish RPC directly cannot bypass this gate.
 - Provider errors, invalid/unfinished responses, quota exhaustion, and interrupted
   checks do not approve content. Users can retry; rejected text/images must be revised
-  or replaced. Frozen drafts link to creating a revised challenge.
+  or replaced. Unpublished drafts can be revised through **Edit challenge**;
+  relevant moderation approvals are invalidated and checked again.
 
 Human captions are sent to Gemini in a separate safety-classification request. They
 are **not** sent to the opponent-caption generator. Moderation does not change the
@@ -48,7 +49,7 @@ or hide the challenge. The same page lists up to 50 templates awaiting visual re
 Creators can hide their own published challenges through **Manage visibility**.
 Hiding is idempotent and resolves outstanding reports. There is no restore button in
 this version. Hidden challenges are excluded from other users' direct reads, feeds,
-voting, publication, Winners, and newly issued private Storage links. The creator
+voting, publication, Results/the winner RPC, and newly issued private Storage links. The creator
 retains access to their own content. Previously issued signed URLs may remain usable
 for their existing lifetime (currently up to one hour); hiding is not immediate
 revocation of bytes already delivered to browsers.
@@ -94,12 +95,9 @@ Template rejection/removal from the public gallery remains an operator task.
 
 ## Deployment
 
-1. Apply [202610080001_image_descriptions.sql](../supabase/migrations/202610080001_image_descriptions.sql)
-   if it is not already applied, then
-   [202610080002_challenge_moderation.sql](../supabase/migrations/202610080002_challenge_moderation.sql),
-   followed by [202610080003_fix_generation_quota.sql](../supabase/migrations/202610080003_fix_generation_quota.sql).
-   The correction is required even if moderation is already deployed: it repairs
-   a generation quota query that referenced the wrong timestamp column.
+1. Follow [deployment](deployment.md) for all pending canonical migrations. The
+   original moderation migration and generation-quota correction are included in
+   that sequence; later GIF/revision migrations also extend publication checks.
 2. In the Supabase SQL editor, grant your existing account moderator membership using
    its UUID from Auth → Users (never a browser-provided role or user metadata):
 

@@ -89,7 +89,9 @@ but do not represent Google provider behavior.
 - Challenge upload, image-description confirmation/edit/replacement, cached analysis, and manual fallback.
 - Mock caption generation, publication, blind voting, undo/switch, and timed reveal.
 - Generation claim exclusivity, retries, and rejection of forged or cross-user writes.
-- Winner eligibility, attribution after closing, and anonymous access restrictions.
+- Winner RPC eligibility, attribution after closing, and anonymous access restrictions.
+- Draft revision/invalidation, staged creation, saved-upload recovery and stale revisions.
+- Empty/caught-up arrival, draft resumption, recent activity and paginated all-outcome Results.
 - Moderation failure/revision, direct publication bypass rejection, reports, role restrictions, template review, and hiding across reads/Storage/Winners.
 
 Every authenticated test creates unique accounts. Fixture teardown removes only

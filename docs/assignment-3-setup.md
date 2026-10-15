@@ -1,4 +1,10 @@
-# Assignment 3 setup
+# Assignment 3 setup — historical
+
+Archived October 1 baseline, retained to explain the original assignment. **Do not
+use this as current setup.** Follow [deployment](deployment.md) and the complete
+canonical migrations. Later normalization removed legacy profile fields, Challenges
+introduced server-only credentials, and `/images` now redirects to Results. Original
+route/grant/credential statements below describe that earlier app version.
 
 ## 1. Apply the database migration
 

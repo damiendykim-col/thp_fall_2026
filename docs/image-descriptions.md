@@ -7,8 +7,8 @@ Gemini description quality separately from schema and mock-provider checks.
 
 ## Creation flow
 
-1. Selecting an upload sends its normalized image to Gemini for a short, literal
-   visual description. The disclosure appears before the file picker.
+1. Selecting a still upload sends its normalized image to Gemini for a short, literal
+   visual description. GIFs send confirmed sampled frames after frame review. The disclosure appears before the file picker.
 2. The owner sees the image and editable suggestion. They can accept it, edit it,
    or choose **Write my own description**. Confirmation is always explicit;
    editing the description or changing the image clears confirmation.
@@ -24,7 +24,8 @@ Existing challenges keep their original situation and do not require a backfill.
 
 A failed description request leaves the upload available for manual description.
 Only images that have passed safety checking can use manual description fallback.
-See [moderation setup](moderation.md) for its additional migration.
+See [moderation](moderation.md) for the safety gate and [deployment](deployment.md)
+for the complete migration sequence.
 If upload itself fails, **Retry this image** reuses the selected local file. Once
 the upload (including selected GIF frames) is saved, **Retry description** checks
 its analysis without uploading again. Frames saved does not mean description
@@ -69,7 +70,8 @@ same image does not rewrite earlier challenges. Template reviews use source `tem
 and do not change the public template library. The existing `situation` field is
 retained for feed compatibility: optional context if supplied, otherwise description.
 
-Owner-scoped hashes of normalized image bytes deduplicate upload/analysis retries.
+Owner-scoped hashes of normalized image bytes and representation data (including
+selected GIF frame indices) deduplicate upload/analysis retries.
 The same image can be used in multiple challenges without generating another
 suggestion. A per-form submission ID makes repeated draft submissions idempotent.
 
@@ -92,8 +94,9 @@ its provenance without treating user approval as proof of visual accuracy.
 
 ## Deployment
 
-1. Run [202610080001_image_descriptions.sql](../supabase/migrations/202610080001_image_descriptions.sql)
-   once in the hosted SQL editor, after the challenge/winner migrations.
+1. Follow [deployment](deployment.md) for the complete canonical migration sequence.
+   Image descriptions originated in `202610080001_image_descriptions.sql`; later
+   moderation/GIF/revision migrations extend that contract.
 2. Deploy the app. Existing Gemini and server-only Supabase credentials are reused;
    no new provider key is needed. With moderation enabled, the new challenge page allows 120 seconds for actions.
 3. Upload a non-sensitive image, inspect the real description, edit/confirm it, add

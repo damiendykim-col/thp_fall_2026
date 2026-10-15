@@ -1,6 +1,7 @@
 # Editing unpublished challenges
 
-Release 2, October 14, 2026. Local implementation; apply the migration before deploying.
+Release 2, October 14, 2026. Implemented locally; see [deployment](deployment.md)
+for verifying/applying the required migration before release.
 
 Creators can open **Edit challenge** from an unpublished preview. The form starts
 with its saved image/template, reviewed description, context and human caption.
@@ -54,8 +55,9 @@ that operation to the inspected revision.
    opponent, and a stale-tab rejection on a non-sensitive unpublished challenge.
 3. Verify published rounds still offer no edit action and retain their votes.
 
-Only the isolated local E2E database has been migrated during this implementation.
-No hosted schema or production content was changed. Rolling back app code is
+During the October 14 implementation, only the isolated local E2E database was
+migrated. No hosted schema or production content was changed in that work; this
+is a dated execution record, not a fresh query of current hosted status. Rolling back app code is
 compatible with the additive schema, but older writers lack revision-aware checks;
 do not run older writers concurrently with draft editing.
 

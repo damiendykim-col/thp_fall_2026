@@ -1,8 +1,25 @@
-# Private taste evaluation — first slice
+# Private taste evaluation
 
-## V3 candidate after adjudication (October 11)
+## Current status — October 15, 2026
 
-`--taxonomy mechanisms-v3` opts into revised evidence guidance. The default remains
+The private tooling slice and live development evaluations through v3 are complete.
+The initial pilot, expanded v2 corpus, context control, adjudication and v3 run are
+research evidence, not a production model-selection result. Production persistence,
+taste summaries and downstream features await TA/professor feedback; see the
+[current plan](../../../docs/design/README.md). No further run is required now.
+
+Commands below are reproducibility recipes. Private `.runtime` files are not shipped
+with a checkout; existing workspaces may already contain completed reviews/results.
+Do not reset judgments, overwrite outputs or rerun live jobs just because an older
+recipe names them. Use new output directories for new configurations.
+
+Runner defaults differ intentionally: single-file `run.mjs` defaults to `styles-v1`;
+`batch.py`/`batch.mjs` defaults to `mechanisms-v2`. V3 is explicit for either.
+Neither default changes the production caption model.
+
+## V3 reproducibility recipe (candidate prepared October 11)
+
+`--taxonomy mechanisms-v3` opts into revised evidence guidance. The batch default remains
 v2, with byte-identical requests and compatible existing batch ledgers. V3 retains
 the same labels, schema, models, and scoring; only its prompt changes. It checks
 for overlapping mechanisms, distinguishes downplaying from exaggeration, and
@@ -46,8 +63,8 @@ At most 48 fresh requests for both input conditions, with eight additional attem
 reserved for retries. Ties/unclear reduce coverage and requests. If all judgments
 are tie/unclear, the build produces only a review report; skip the batch runner.
 Keep models/prompt/scoring fixed after reviewing outputs. `.runtime/v3-freeze.json`
-records the candidate hashes and corpus fingerprint. No live requests were made
-while preparing this candidate. V3-only results cannot establish an improvement
+records the candidate hashes and corpus fingerprint. Preparation made no live requests; the subsequent v3 evaluation has completed.
+The local `v3-results/batch-results.json` reports `status: complete`. V3-only results cannot establish an improvement
 over v2; that requires both prompts on the same new reviewed comparisons.
 
 ## Larger corpus: offline review and batching
@@ -55,8 +72,9 @@ over v2; that requires both prompts on the same new reviewed comparisons.
 `corpus.py` uses Python's standard library. It never reads author notes or calls a
 provider. For the Claude corpus supplied October 10, preparation has already made
 `.runtime/claude-review.json`: 11 development triples, four held-out triples, and
-`comparison-005` isolated as one context control. All judgments are still unset.
-The original Downloads files are unchanged.
+`comparison-005` isolated as one context control. Judgments were initially unset; review and subsequent runs have since completed.
+Check the existing workspace rather than preparing over it. The original Downloads
+files were not changed by preparation.
 
 Start the development review from the repo root:
 
@@ -112,7 +130,8 @@ This is Stage 2A evaluation tooling, not a deployed taste-profile feature. It an
 schema or model routing changes are required. The user completed the first v1 live
 pilot; its reported two comparisons favored same-topic embeddings (0/2 agreement),
 with style labels at one win/one tie and combined scores at one win/one loss.
-These are exploratory observations, not validation. No v2 live evaluation has run.
+These are exploratory observations, not validation. Later v2/v3 runs do not make
+that original two-comparison pilot a representative benchmark.
 
 ## What is wired
 
@@ -123,7 +142,8 @@ These are exploratory observations, not validation. No v2 live evaluation has ru
 - Private JSON results containing inputs, prompts, model IDs, versions, fingerprints,
   vectors, labels, explanations, usage when provided, latency and disagreements.
 - Exact input/model/prompt-version result reuse, partial-failure checkpoints and
-  explicit retries through a new run. No automatic retry or background analysis.
+  explicit retries through a new single-file run. The batch runner adds bounded
+  automatic transient-error retries and resumable ledgers; neither runs in production.
 - Read-only selected-challenge export and a sanitizing importer. No ballots,
   profile data, author identities or Human/AI labels go into model requests.
 
@@ -141,12 +161,11 @@ human-reviewed comparisons remain the reference. The provisional taxonomy in
 `labels.mjs` is an experiment, not an adopted production taxonomy. Labels describe
 content, not the author or audience. Explanations are model hypotheses, not facts.
 
-Google lists standard free-tier access for these defaults (checked October 10,
-2026), but this project's quota/billing have not been verified. Paid embedding
-rates are $0.20 per million text tokens and $0.45 per million image tokens at review
-time. Label generation is additional usage. Free-tier data may improve Google
-products; only use content approved for that handling. A request cap is not a
-money cap; review account settings and current prices before a live run.
+The October 10 investigation recorded free-tier availability, not a guarantee of
+current account access, quota or billing. Verify provider pricing and account
+settings before a new live run. A request cap is not a money cap. Confirm applicable
+data handling and use only content approved for it; this guide does not authorize
+sending private production content to a provider.
 
 Sources: [embeddings](https://ai.google.dev/gemini-api/docs/embeddings),
 [structured output](https://ai.google.dev/gemini-api/docs/structured-output),
@@ -231,8 +250,7 @@ result filename; use `-o another-summary.json` for a different destination. It n
 overwrites a file. The report keeps captions, scenes, labels/evidence/uncertainty,
 run configuration and scores. Vectors, requests, fingerprints and raw usage are
 omitted. Disagreement flags and delivery margins are merged into comparison rows
-instead of repeating them. Partial runs explicitly show missing analysis. Both
-styles-v1 and mechanisms-v2 are supported, including older runs without a taxonomy
+instead of repeating them. Partial runs explicitly show missing analysis. Styles-v1 and mechanisms-v2/v3 are supported, including older runs without a taxonomy
 field. Input must be the full result JSON, not a pasted fragment.
 
 Keep the original for `--reuse`; the summary cannot replace it. Summaries still
@@ -258,7 +276,8 @@ Embedding 2 accepts at most six JPEG/PNG images per request; our GIF storyboard 
 contain eight. This CLI rejects image/frame inputs. A versioned, reviewed multimodal
 representation remains a separate evaluation step; never silently discard frames.
 
-Next gate: reviewed dataset and a bounded live run. Production persistence (2B),
+Next gate: instructor feedback on the target use case and taxonomy, then an agreed
+independent evaluation if needed. Existing reviewed runs are complete. Production persistence (2B),
 closed-ballot taste summaries (2C), member graph, personalization and cross-family
 judges remain deferred. The first private tooling slice is complete; Stage 2A's
 empirical model selection is not.

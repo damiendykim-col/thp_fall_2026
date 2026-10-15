@@ -1,39 +1,26 @@
-# Winners gallery
+# Winner RPC — compatibility reference
 
-Current status: the project owner reports production validation and performance
-satisfactory. Deployment steps below are reference instructions for future setups,
-not a request to replay already-applied migrations.
+The winner-only gallery UI and its application loader are retired. Current
+[Results](arrival-and-return.md) displays all closed rounds, including ties and
+no-vote rounds, 12 per page. `/images` redirects to Results; the public template
+gallery remains at `/images?view=templates` and in challenge creation.
 
-Images now defaults to **Winners**, with the existing Cards/List/Table gallery under
-**Templates**. Winning cards pair the original image with its winning caption,
-label that caption Human-written or AI-generated, and link to the source results.
+## Retained database contract
 
-## Deployment
+`list_challenge_winners` remains available and tested. Its migration,
+`202610070001_challenge_winners.sql`, is part of the canonical sequence; use the
+[deployment guide](deployment.md), not a separate manual gallery rollout.
 
-Run `supabase/migrations/202610070001_challenge_winners.sql` once in the hosted SQL
-editor, after the Stage 1 challenge migration. Then deploy the app. No data backfill,
-new credentials, buckets, or scheduled jobs are required. Existing eligible challenges
-appear automatically. This work applies the migration only to the local test stack.
+The RPC returns visible published challenges past their deadline with exactly two
+candidates, a unique highest score and at least one non-creator vote. Ties and
+zero-vote rounds are excluded. It returns at most 50, newest closing time first.
+A win means winning that challenge, not broad popularity.
 
-## Eligibility and access
+It is authenticated-only. The scoped SECURITY DEFINER reader does not grant direct
+access to hidden caption tables. No captions/files are copied into a winner table.
+If account deletion removes votes, derived winners may change; permanent awards
+would require a separate product decision.
 
-The database returns only published challenges whose deadline has passed, with
-exactly two candidates, a unique highest score, and at least one non-creator vote.
-Ties and zero-vote rounds do not produce winners. Results are ordered by closing time,
-newest first, limited to 50. A win means winning that challenge, not broad popularity.
-
-No files or captions are copied. Uploaded images retain their private bucket and use
-batched signed URLs with the viewer's session. Winners remain authenticated-only,
-matching the existing challenge audience; Templates stays public. The narrowly
-scoped SECURITY DEFINER reader is intentional: it returns only eligible closed
-results without granting direct access to the hidden caption table.
-
-Eligibility is derived, so if votes are removed by account deletion, a result can
-change or leave this gallery. Permanent historical awards are a separate product choice.
-
-## Verification
-
-BDD cases cover human/AI winners, open/draft exclusion, ties, zero votes, anonymous
-access, labels, original results links, and public template controls. A regression
-also verifies that an early client-side deadline refresh keeps checking the server
-at five-second intervals until authoritative closed results arrive.
+The current Results page uses the protected challenge reader, not this winner-only
+RPC. Keep its database tests while callers/compatibility requirements remain; remove
+it only after a deliberate dependency audit, not merely to silence advisor warnings.

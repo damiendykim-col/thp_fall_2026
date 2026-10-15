@@ -2,8 +2,10 @@
 
 Status: Stage 2A private evaluation tooling is wired: labels, embeddings, combined
 comparison, selected-challenge import and resumable results. The user completed
-the initial two-comparison live pilot. V2 separates mechanism/delivery/topic and
-compares caption-only with scene-plus-caption; v2 has not run live yet.
+the initial pilot and subsequent expanded v2, context-control and v3 evaluations.
+Mechanism/delivery/topic evidence and caption-only versus scene-plus-caption inputs
+are supported. Production work is paused for TA/professor feedback; completed runs
+do not establish personal-taste accuracy or an independently validated model.
 pgvector is enabled. Gemini Embedding 2 is the pilot candidate, not a production
 selection; dimensions and schema remain undecided.
 See the [pilot guide](../../scripts/experiments/taste/README.md) for model roles,
@@ -27,7 +29,9 @@ pairs. Include same image/different captions, similar topics/different humor,
 different topics/similar humor, topical versus evergreen jokes, and GIF examples
 where selected frames omit important timing. Compare structured style features,
 embeddings, and their combination against human judgments. Record disagreements,
-latency, usage/cost and model-input limitations. The text pilot is capped at 12 items / 24 requests per run. Broader sample
+latency, usage/cost and model-input limitations. The single-file runner caps each
+input condition at 12 items / 24 requests; corpus batches have a separate whole-job
+attempt budget and pacing. See the tooling guide before running. Broader sample
 coverage and quality acceptance criteria must be agreed before using scores to
 choose a production representation; they remain open.
 
@@ -64,14 +68,16 @@ when operational needs justify it.
 
 ## Representing humor
 
-Suggested dimensions to evaluate:
+Early conceptual dimensions (not the implemented experiment taxonomy):
 
 - Style: dark, absurdist, observational, wordplay, self-deprecating.
 - Subject: college, relationships, work, NYC, money.
 - Delivery: deadpan, exaggerated, ironic.
 - Image relationship: visual contrast, reaction, familiar meme context.
 
-Labels overlap and may be uncertain. The instructors' taxonomy should be reviewed
+The private v2/v3 experiment instead separates evidence-backed mechanisms, delivery
+and topic; v3 revises evidence guidance, not the label schema. These candidates
+have not been adopted for production. Labels overlap and may be uncertain. The instructors' taxonomy should be reviewed
 before choosing our own. Keep structured analysis separate from generation: a
 requested genre is not evidence that the output successfully expresses that genre.
 

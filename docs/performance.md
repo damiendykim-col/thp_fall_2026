@@ -18,7 +18,12 @@ The supplied Supabase CSV is an aggregate statement report with 20 entries. It c
 
 The Storage screenshot provides more direct evidence: a signed-avatar URL creation POST took 272 ms, avatar GETs took 396 and 622 ms, and public GIF GETs took 194–246 ms. The shown 304 cache revalidations took 20–24 ms. Each shown row has a count of one, so these are individual samples, not stable latency estimates. The overall 202.18 ms figure combines different operations. URL creation blocks the server's member-data rendering; image retrieval happens afterward in the browser. Neither value is pure SQL execution time, and the screenshot does not establish a full browser waterfall or exact correlation with the 926 ms Vercel request.
 
-## Collecting useful measurements
+## Historical measurement procedure (October 2)
+
+For a new investigation, use current Open → Results → Yours/Profile routes and
+current timing labels from `src`; the older Images/Members route sequence and
+per-photo labels below describe the baseline, not the current UI. Results now
+uses bounded per-round reads; measure it separately before changing that design.
 
 1. Enable Speed Insights in the existing Vercel project and deploy this code. The root layout includes its Next.js component. It provides browser Web Vitals; it is not a breakdown of each tab's server work or a complete click-to-content timer. See [Vercel metrics](https://vercel.com/docs/speed-insights/metrics).
 2. Temporarily set the server environment variable `PERF_LOGGING=true` in the Vercel environment under test, then redeploy. Filter runtime logs for `app-performance`. Each entry contains only a fixed operation name and `durationMs`; results, names, emails, tokens, photo paths, and signed URLs are not logged by this instrumentation.
@@ -27,7 +32,7 @@ The Storage screenshot provides more direct evidence: a signed-avatar URL creati
 5. If data calls dominate, export statement statistics for actual application reads/RPCs over the relevant interval (including calls, mean/max execution time, and role). A slow SDK call paired with a fast SQL statement points toward service/network overhead rather than SQL execution alone.
 6. Remove or set `PERF_LOGGING=false` and redeploy after the investigation to stop diagnostic log volume.
 
-## Candidates to test after measuring
+## Candidates considered at the baseline (not an open backlog)
 
 - Deduplicate page/header user verification within one server render using React's request-scoped cache. Keep authorization enforced on every request.
 - Fetch independent profile/history queries concurrently and batch avatar URL signing. Members currently signs photos concurrently, but still sends a separate request per photo.
@@ -48,8 +53,9 @@ Implemented after that baseline:
 - Profile's current/history photos and Members' current photos use one signing batch per page. Results are matched by object path, duplicate paths are removed, and individual failures preserve successful photos. The existing authenticated client and Storage RLS still apply.
 - Batch timing labels are now `profile.avatars` and `members.avatars`; compare these with the previous per-photo labels. The timings include the entire batch. Reduced request count does not guarantee lower batch latency.
 
-Next validation: deploy, leave `PERF_LOGGING=true` for the experiment, and repeat the same signed-in navigation on the same hostname. Check warm gallery data-call timing, Profile's overlapping reads, signing batch duration, and photo visibility for two accounts. No deployment or measured production speedup is claimed by the local tests.
+The validation proposed at that time was: deploy, leave `PERF_LOGGING=true` for the experiment, and repeat the same signed-in navigation on the same hostname. Check warm gallery data-call timing, Profile's overlapping reads, signing batch duration, and photo visibility for two accounts. No deployment or measured production speedup is claimed by the local tests.
 
 ### Public image header check
 
-A live HEAD request for `pikachu-shocked-face-stunned.gif` returned HTTP 200, `Cache-Control: no-cache`, and `CF-Cache-Status: MISS`. This one object requires browser revalidation; it does not establish the headers/cache state of every object. These headers originate at Supabase Storage, not the Next.js gallery data fetch. Updating existing object cache metadata requires authorized Storage write access. For public images kept immutable at their URL, configure a positive browser freshness lifetime (for example 86400 seconds), use new paths for replacements, and verify the resulting response headers. This change has not been applied remotely.
+A live HEAD request for `pikachu-shocked-face-stunned.gif` returned HTTP 200, `Cache-Control: no-cache`, and `CF-Cache-Status: MISS`. This one object requires browser revalidation; it does not establish the headers/cache state of every object. These headers originate at Supabase Storage, not the Next.js gallery data fetch. Updating existing object cache metadata requires authorized Storage write access. For public images kept immutable at their URL, configure a positive browser freshness lifetime (for example 86400 seconds), use new paths for replacements, and verify the resulting response headers. No remote header change was verified during that baseline check; current object
+headers have not been re-audited here.

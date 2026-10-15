@@ -15,7 +15,7 @@ The app uses a minimal black theme with yellow accents and deploys to Vercel.
 - **Profile:** edit your name and favorite joke, upload a profile photo (including GIFs), or restore a previous photo. Text drafts survive navigation, and changed fields show unsaved edits.
 - **Members (legacy route, outside primary navigation):** browse profile photos and favorite jokes without exposing members' names or email addresses. Your own card links to profile editing.
 
-Templates are public. Challenges, winners, and profile editing require sign-in. The Members page also requires a completed first and last name. Production sign-in uses Google OAuth.
+Templates are public. Real challenges, Results, and profile editing require sign-in. Members requires completed first and last names. Login currently also routes incomplete profiles through name onboarding, although challenge authorization itself only requires sign-in. Production sign-in uses Google OAuth.
 
 ## Content moderation
 
@@ -76,7 +76,7 @@ Uploaded images have reusable, owner-private description records; each challenge
 
 Private identity lives in `profiles`; member-facing content lives in `member_profiles`, with photo history in `profile_photos`. Challenge records, captions, votes, and generation attempts are stored separately. Winners are derived from closed results rather than copied into another gallery table.
 
-RLS and database functions enforce ownership, voting limits, deadlines, and visibility. Raw challenge captions intentionally have no direct client access: scoped RPCs return the fields a viewer may see, keeping AI attribution and vote totals hidden during an open challenge. Server admin credentials are reserved for privileged upload and generation operations.
+RLS and database functions enforce ownership, voting limits, deadlines, and visibility. Raw challenge captions intentionally have no direct client access: scoped RPCs return the fields a viewer may see, keeping AI attribution and vote totals hidden during an open challenge. Server admin credentials are reserved for privileged upload, moderation, draft-revision and generation operations after server-side authorization.
 
 New challenge uploads accept JPEG, PNG, WebP and GIF images up to 3 MiB (shown as 3 MB). Still images are normalized; GIFs retain animation and use confirmed sampled frames for AI input, with full-animation moderator approval before publication. Uploaded image representations are sent to the model; gallery templates, including GIFs, use the confirmed image description and optional context instead of frame analysis. See [Stage 1 setup and limits](docs/design/01-stage-1-setup.md) for generation quotas and operational details.
 
@@ -84,7 +84,7 @@ New challenge uploads accept JPEG, PNG, WebP and GIF images up to 3 MiB (shown a
 
 The local workflow above is the quickest way to explore the app. To use a hosted Supabase project and real Gemini generation:
 
-1. Follow the [Auth and profile setup](docs/assignment-3-setup.md), [profile schema rollout](docs/profile-schema-rollout.md), [caption challenge setup](docs/design/01-stage-1-setup.md), [winners migration](docs/winners-gallery.md), [image-description migration](docs/image-descriptions.md), and [moderation setup](docs/moderation.md), in that order. For an existing database, check which migrations and manual cutover steps are already applied before running SQL. A Vercel deployment does **not** apply database migrations.
+1. Follow the [deployment guide](docs/deployment.md). Fresh databases use the complete canonical migration sequence; existing databases need only verified pending migrations. Historical profile cleanup is already incorporated and must not be replayed. A Vercel deployment does **not** apply SQL.
 2. Configure the deployment environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: browser-safe Supabase connection settings.
    - `SUPABASE_SECRET_KEY` **or** `SUPABASE_SERVICE_ROLE_KEY`: server-only administrative access.
@@ -99,12 +99,13 @@ For ordinary development against a configured backend, `.env.example` lists the 
 
 ## Further reading
 
-- [Current plan](docs/design/README.md): implemented scope, next embedding experiment, open decisions and deferred work.
+- [Current plan](docs/design/README.md): completed UX work, release checks, instructor-gated taste work and deferred ideas.
 - [Temporal context](docs/design/04-temporal-context.md): future dated context and external provider integration; not implemented.
 - [E2E guide](docs/e2e.md): local setup, test login, browser coverage, and CI.
 - [Profile schema rollout](docs/profile-schema-rollout.md): identity separation and migration verification.
 - [Stage 1 setup](docs/design/01-stage-1-setup.md): AI configuration, storage, quotas, and current limits.
-- [Winners gallery](docs/winners-gallery.md): eligibility, visibility, and deployment.
+- [Winner RPC](docs/winners-gallery.md): retained compatibility contract; the old winner-only UI is retired.
+- [Documentation map](docs/README.md): current guides and historical records.
 - [Performance notes](docs/performance.md): caching, request timing, and instrumentation.
 
-GIF uploads require an additional migration and full-animation moderator approval before publication. See [GIF rollout](docs/gif-challenges.md).
+GIF behavior and limits are documented in the [GIF guide](docs/gif-challenges.md); its schema is part of the canonical migration sequence.

@@ -1,88 +1,89 @@
 # Meme Club: current plan
 
-Updated October 10, 2026 (America/Phoenix). This index is the source of truth for
-priority and decision status. Detailed stage documents specify behavior; dated
-rollout records preserve history, not additional pending requirements.
+Updated October 15, 2026 (America/Phoenix). This is the authority for priorities and
+decision status. [Documentation map](../README.md) separates current references from
+historical rollout records. No implementation or deployment is implied by a proposal.
 
-## Current product
+## Completed in the repository
 
-Challenge-first, minimalist black/yellow UI. Signed-out visitors get a labeled
-interactive example; real challenges and results remain signed-in only. Navigation
-centers on Open / Results / Yours, creation, and an account menu. Members stays
-separate from Challenges and outside primary navigation. Names and emails stay out
-of member discovery; avatars/content can still identify people.
+The challenge-first black/yellow experience is the product focus. Signed-out visitors
+get an illustrative interactive example; real challenges and results require sign-in.
+Open / Results / Yours, creation and the account menu are the main navigation.
+Members remains separate and outside primary navigation.
 
-Implemented scope:
-- Human versus AI caption challenges, 24-hour voting, one reversible upvote per
-  account/challenge, no creator voting, blind attribution and totals until closure.
-- Still-image uploads and GIF uploads with confirmed sampled frames. Uploaded GIFs
-  require full-animation moderator approval as well as automated checks.
-- Reviewed image descriptions, optional joke context, reporting/moderation, winners,
-  participation badges, profile editing and avatar history.
-- Local Supabase E2E setup and required GitHub unit/E2E checks.
+- Human versus AI captions, 24-hour voting, one reversible upvote per account per
+  challenge, no creator voting, and blind attribution/totals until closure.
+- Still/GIF uploads, confirmed descriptions and GIF frames, optional joke context,
+  pre-publication checks, reports and manual full-animation GIF review.
+- Profile editing, avatar history, and member discovery without names/emails.
+- The four-part UX review is implemented: upload/retry recovery; revision-safe
+  unpublished draft editing; three-stage creation; improved arrival/return visits.
+- Home offers draft resumption and recent results. Open cards identify ownership
+  and existing votes. Results includes ties and no-vote rounds, 12 per page.
+- Local Auth/database/Storage E2E coverage and required unit/E2E GitHub checks.
 
-Descriptions support accessibility and generation; they are not feed headlines.
-Current upload limits and provider settings belong in [Stage 1 setup](01-stage-1-setup.md)
-and [GIF rollout](../gif-challenges.md), not duplicated in backlog proposals.
+See [creation](../challenge-creation.md), [editing](../challenge-editing.md), and
+[arrival/return](../arrival-and-return.md) for current behavior. Names are not a
+challenge authorization requirement, but login still routes incomplete profiles
+through name onboarding; making that optional is not implemented.
 
-Hosted grants, GIF schema and migration history were verified during
-[database maintenance](../database-maintenance-2026-10-10.md). Two legacy challenges
-were returned to creator review with votes cleared; they are not awaiting a new
-moderator-queue implementation. Database completion is not proof of a live Gemini
-GIF smoke test. Verify deployment/commit status from Git and the deployed app when
-releasing; do not infer it from an older planning note.
+## Next: close the release, then respond to observed friction
 
-## Next: Stage 2A embedding experiment
+1. Verify the deployed commit and pending database migrations. The editable-draft
+   migration is required for the new editor. Follow [deployment](../deployment.md);
+   do not replay old profile cleanup or assume a Vercel deploy applies SQL.
+2. Smoke-test Google login/return, draft editing, creation, voting and Results with
+   separate accounts, including mobile. Local mocks do not verify live Gemini.
+3. Measure deployed arrival/Results navigation if delay remains noticeable. Results
+   uses bounded per-round reads; prefer measured improvements over a new architecture.
+4. Collect TA/PM feedback on the streamlined challenge flow. Choose the next small
+   change from observed friction. Optional name onboarding is a candidate, but needs
+   an explicit decision about Members eligibility and existing redirects first.
 
-[Semantic analysis and taste profiles](02-taste-profiles.md) is next, beginning with
-a bounded offline/private evaluation of image-caption pairs. No production embedding provider,
-vector dimensions, taxonomy, aggregation formula or evidence threshold is selected.
-The [description-only evaluation tooling](../../scripts/experiments/taste/README.md) now
-compares Gemini Embedding 2 with structured Flash-Lite style labels and a combined
-score. Selected-challenge import and exact-result reuse are wired. The user reported
-a completed two-comparison v1 pilot; it is too small for model selection. The next
-experiment separates mechanism/delivery/topic and compares caption-only with
-scene-plus-caption. Expanded proposed fixtures still require human review.
-pgvector is available; embeddings and taste profiles are not implemented.
+These are release checks, not claims of a new defect. October 10 hosted maintenance
+is recorded separately; later hosted migration/deployment status has not been
+re-audited in this documentation pass. No further schema overhaul is justified by
+this audit alone. The admin app is a separate workstream; shared migrations remain
+owned by this repository.
 
-Sequence:
-1. Verify current embedding options, multimodal support, cost and data handling.
-2. Curate examples that separate humor style from subject matter and timing.
-3. Compare structured labels, embeddings and a simple style-only baseline.
-4. Record the decision and evaluation before choosing persistent vector schema.
-5. Only then build versioned analysis storage and private taste summaries from
-   final votes on closed challenges. Set privacy and insufficient-evidence behavior
-   before exposing a user-facing feature.
+## Taste: private evaluation complete enough for feedback, production gated
 
-Analysis must not block challenge creation, moderation, voting or publication.
-Keep TDD/BDD for implementation; passing plumbing tests does not establish semantic
-quality. No automatic paid processing of the existing corpus is implied by this plan.
+Private tooling supports reviewed corpora, mechanism evidence, embeddings, scene
+ablation, bounded/resumable batch execution and compact reports. V1, expanded v2,
+context controls, adjudication and a completed v3 run have been exercised. This is
+not a validated production taste model. Reviewed held-out data used for revisions
+is now development evidence, and v3 examples are not an independent benchmark.
 
-## Deferred, with preserved intent
+**Pause production taste implementation pending TA/professor feedback** on the use
+case and taxonomy. No more API runs are required merely to advance the backlog.
+Use the existing evidence to discuss whether the goal is mechanism similarity,
+personal preference, or recommendation quality; these are different targets.
 
-- [Temporal context](04-temporal-context.md): separate enduring taste from current
-  circumstances; retain a provider-independent contract. External MCP/API feeds,
-  exposure tracking and trend-driven generation are proposals, not current features.
-- [Members graph](03-members-graph.md): follows useful, permissioned taste profiles;
-  no graph UI or projection algorithm in the embedding experiment.
-- Caption quality/persona tuning: explicitly postponed; embedding evaluation does
-  not change the opponent-generation persona.
-- Watch-style honeycomb challenge browsing, carousel/swipe interactions, PvPvE:
-  future design session. Preserve the current two-caption voting rules meanwhile.
-- On-demand AI moderation explanations: advisory context, not definitive judgment;
-  deferred and distinct from existing pre-publication safety checks.
-- Pagination, automated orphan retention, notifications and recommendation ranking:
-  revisit when usage or product feedback justifies them.
+After that decision, agree independent evaluation criteria and corpus coverage
+before choosing a representation. Only then consider versioned private analysis
+(2B), private closed-ballot taste summaries (2C), and downstream discovery.
+pgvector availability does not settle model, dimensions, thresholds or schema.
+See [Stage 2](02-taste-profiles.md) and the [experiment guide](../../scripts/experiments/taste/README.md).
 
-## Document map and decision discipline
+## Deferred, with explicit triggers
 
-- [Stage 1](01-caption-challenges.md): implemented competition contract.
-- [Stage 1 setup](01-stage-1-setup.md): operational defaults and release checks.
-- [Stage 2](02-taste-profiles.md): experiment gates, later taste pipeline and open choices.
-- [Stage 3](03-members-graph.md): deferred discovery experience.
-- [Temporal context](04-temporal-context.md): future context inputs and measurement.
+- **Open/Yours pagination:** both remain bounded to 50; revisit when users cannot
+  reach relevant rounds. Results pagination is already implemented.
+- **Storage retention:** define abandoned-upload/draft retention and safe reference
+  checks before adding deletion jobs; prioritize if storage growth warrants it.
+- **Exact legacy schema parity:** October 10 recorded original-images drift. Use a
+  forward migration if that difference affects a feature/test; do not replay history.
+- **Caption quality/persona:** postponed pending instructor direction.
+- **AI moderation explanations:** optional advisory assessment, distinct from existing
+  safety gates; wait for a concrete reviewer need and quota budget.
+- **Carousel, watch-style honeycomb, swipe, PvPvE:** future design experiments, not
+  requirements for the current two-caption competition.
+- **Temporal context:** manual context evaluation before external MCP/API feeds,
+  trend collection or exposure instrumentation. [Design](04-temporal-context.md).
+- **Members graph:** follows useful, permissioned taste evidence. [Design](03-members-graph.md).
+- Notifications, recommendation ranking, comments and broader social features:
+  require product evidence; not part of the current release.
 
-“Implemented” requires code/schema evidence; “verified hosted” identifies an actual
-hosted check. “Agreed direction” is user intent, not a completed feature. Proposed
-algorithms, providers and thresholds remain open until evaluated. Update the current
-sections when decisions change rather than appending contradictory status blocks.
+Analysis must not block creation, moderation, publication or voting. Preserve
+TDD/BDD for future behavior changes; passing software tests does not validate taste
+inference, humor quality or live provider availability.

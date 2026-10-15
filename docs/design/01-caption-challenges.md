@@ -1,8 +1,8 @@
 # Stage 1 — Assignment 4: image uploads and caption challenges
 
-Status: implemented; the project owner reports production validation and performance
-satisfactory for the current scope. This status records user confirmation, not a new
-independent deployment audit.
+Status: implemented in the repository. Earlier production validation was reported
+by the project owner; later draft-editing and arrival changes need their own release
+checks. This document is not an independent deployment audit.
 See [implementation and deployment notes](01-stage-1-setup.md) for defaults adopted and limitations.
 Related: [stage index](README.md), [taste profiles](02-taste-profiles.md).
 
@@ -33,9 +33,10 @@ outputs, vote inserts, RLS, and an intentional product experience.
 - Creators cannot vote on their own challenges; they already know their own caption.
 - Human caption is written before generation. The model sees the shared image and
   situation, not the human caption.
-- One successful AI candidate per draft; retry failures within the configured limits.
-  Creating a draft freezes the human caption and situation; successful outputs cannot
-  be regenerated.
+- One current AI candidate per draft. Unpublished drafts can be revised: human-caption-only
+  edits retain the opponent; image/description/context changes invalidate it and require
+  regeneration. Attempts and daily quotas do not reset. Published pairs are immutable.
+  See [draft editing](../challenge-editing.md).
 - New still uploads support JPEG, PNG and WebP, up to 3 MiB and 40 megapixels.
   They are normalized to JPEG, at most 1600px per side. Existing templates, including
   GIFs, use the supplied scene description rather than frame analysis.
@@ -89,7 +90,7 @@ part of the access model, not immediate revocation.
   MIME type/dimensions and lifecycle metadata.
 - **Challenges:** creator, source image, shared situation, publication/closing times
   and draft/generation/publication state, with hiding for withdrawal/moderation.
-- **Caption candidates:** challenge and immutable text. Each published challenge
+- **Caption candidates:** challenge and candidate text (immutable after publication). Each published challenge
   has exactly one human and one AI candidate.
 - **Private attribution:** candidate origin and generation linkage. Keep it outside
   the pre-close public read surface; RLS alone does not hide selected columns.
@@ -101,7 +102,9 @@ part of the access model, not immediate revocation.
   on voter/challenge and that the candidate belongs to that same challenge.
 
 These describe conceptual responsibilities. The implemented table and RPC contracts
-are in [the challenge migration](../../supabase/migrations/202610050001_caption_challenges.sql).
+start in [the challenge migration](../../supabase/migrations/202610050001_caption_challenges.sql)
+and are extended by later description, moderation, GIF and revision migrations.
+Use the complete sequence in [deployment](../deployment.md).
 Preserve final choices and generation versions for later stages without requiring
 an analysis pipeline now.
 
@@ -132,7 +135,8 @@ error messages, public caches, model metadata or pre-close count endpoints.
 
 Published challenges and winners are available to signed-in users. Only signed-in
 users can generate or vote. Challenges do not require completed profile names;
-that requirement remains specific to the Members directory.
+the Members directory enforces name completeness. Login nevertheless currently routes
+incomplete profiles through onboarding; optional onboarding remains a product decision.
 
 ## Closing and results
 
@@ -146,7 +150,8 @@ timer cannot authorize a late vote.
 
 ## Failure handling and testing
 
-- Failed upload/generation leaves a recoverable draft and publishes nothing partial.
+- Failed uploads retain recoverable form state; generation failures retain the saved
+  draft. Neither publishes partial content.
 - Lost generation responses use request identity to recover status before retrying.
 - Invalid model output is rejected rather than silently published.
 - Concurrent votes, duplicate submissions and deadline-boundary operations preserve
@@ -169,10 +174,11 @@ Record PM feedback and reserve time for one focused revision before submission.
 
 ## Deferred and open decisions
 
-Deferred: genre analysis, embeddings, Members graph, rankings, comments, personalized
+Deferred for production: genre analysis, embeddings, Members graph, rankings, comments, personalized
 recommendations, true A/B exposure experiments and automatic notifications.
 
 Moderation/reporting and GIF support are implemented. Caption quality/persona tuning
-is explicitly deferred. Stage 2A representation evaluation is next; see the
-[current plan](README.md). Unique closed winners appear in Results; `/images` is a
-compatibility redirect. See [winner eligibility](../winners-gallery.md).
+is explicitly deferred. Private representation evaluation has reached v3; production
+taste work awaits instructor feedback. See the [current plan](README.md). Results
+shows all finished rounds, including ties and no votes; `/images` redirects there.
+The [winner RPC](../winners-gallery.md) remains a narrower compatibility contract.
