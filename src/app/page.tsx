@@ -16,5 +16,5 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     if (error) callback.set("error", error);
     redirect(`/auth/callback?${callback}`);
   }
-  return <ChallengesPage searchParams={Promise.resolve({ view: typeof params.view === "string" ? params.view : undefined })} />;
+  return <ChallengesPage searchParams={Promise.resolve({ view: typeof params.view === "string" ? params.view : undefined, page: typeof params.page === "string" ? params.page : undefined })} />;
 }

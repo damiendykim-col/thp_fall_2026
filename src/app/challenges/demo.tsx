@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function ChallengeDemo() {
+export default function ChallengeDemo({ signedIn = false }: { signedIn?: boolean }) {
   const [choice, setChoice] = useState<number | null>(null);
   return <section className="challenge-demo" aria-label="Example challenge">
     <div className="demo-image">
@@ -16,8 +16,8 @@ export default function ChallengeDemo() {
         <button key={caption} className={`demo-caption ${choice === index ? 'selected' : ''}`} aria-pressed={choice === index} onClick={() => setChoice(choice === index ? null : index)}>
           <span>Caption {index + 1}</span>{caption}{choice === index && <strong>Your pick · tap to undo</strong>}
         </button>)}
-      <p className="demo-note" role="status">{choice === null ? 'Illustrative captions. No votes are recorded.' : 'Got a favorite? Sign in to vote in a live challenge.'}</p>
-      <Link className="button button-primary" href="/login">Join the challenges</Link>
+      <p className="demo-note" role="status">{choice === null ? 'Illustrative captions. No votes are recorded.' : signedIn ? 'Example pick only. Your live votes are saved in open challenges.' : 'Got a favorite? Sign in to vote in a live challenge.'}</p>
+      <Link className="button button-primary" href={signedIn ? "/challenges/new" : "/login"}>{signedIn ? "Create your own challenge" : "Join the challenges"}</Link>
     </div>
   </section>;
 }

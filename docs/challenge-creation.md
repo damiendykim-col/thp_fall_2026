@@ -38,5 +38,6 @@ previous draft-editing release is already installed. Browser coverage follows th
 staged flow through upload, GIF review, recovery, moderation failure, generation,
 and publication; component coverage checks navigation and confirmation invalidation.
 
-Next planned item: improve empty home/results states. Taste/persona work and the
-member graph remain separate from this UX sequence.
+The following release addresses [arrival and return visits](arrival-and-return.md),
+including empty home/results states. Taste/persona work and the member graph remain
+separate from this UX sequence.

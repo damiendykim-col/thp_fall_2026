@@ -4,7 +4,7 @@ import { createAuthClient } from "@/lib/supabase/server";
 
 jest.mock("@/lib/supabase/server", () => ({ createAuthClient: jest.fn() }));
 jest.mock("@/components/site-header", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/lib/challenges/winners", () => ({ getChallengeWinners: jest.fn() }));
+jest.mock("@/lib/challenges/arrival", () => ({ getReturnVisits: jest.fn(async () => ({ draft: null, recent: [], error: false })), resultsPage: () => 1 }));
 
 const rows = [
   { id: "own", creator_id: "viewer" },
@@ -54,4 +54,18 @@ test("vote lookup failure does not silently label voted rounds as unvoted", asyn
   render(await ChallengesPage({ searchParams: Promise.resolve({}) }));
   expect(screen.getByRole("alert")).toHaveTextContent("couldn’t be loaded");
   expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+});
+
+test("a fully voted feed acknowledges completion while retaining cards", async () => {
+  setup([{ challenge_id: "voted" }], null, rows.slice(0, 2));
+  render(await ChallengesPage({ searchParams: Promise.resolve({}) }));
+  expect(screen.getByRole("heading", { name: "You’re caught up." })).toBeVisible();
+  expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  expect(screen.getByText(/Review your vote/)).toBeVisible();
+});
+test("own-only rounds do not imply the creator can vote", async () => {
+  setup([], null, [rows[0]]);
+  render(await ChallengesPage({ searchParams: Promise.resolve({}) }));
+  expect(screen.getByRole("heading", { name: "Your rounds are open." })).toBeVisible();
+  expect(screen.queryByText("You’re caught up.")).not.toBeInTheDocument();
 });

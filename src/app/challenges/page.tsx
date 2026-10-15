@@ -1,26 +1,42 @@
 import Link from "next/link";
 import SiteHeader from "@/components/site-header";
 import { createAuthClient } from "@/lib/supabase/server";
-import { getChallengeWinners } from "@/lib/challenges/winners";
-import Winners from "../images/winners";
+import { getReturnVisits, getRoundResults, resultsPage, type ReturnData } from "@/lib/challenges/arrival";
+import { ArrivalEmpty, ReturnVisits, RoundResults } from "./arrival";
 import ChallengeDemo from "./demo";
 
 const draftStatusLabels: Record<string, string> = {
   draft: 'Draft', generating: 'Generating caption', failed: 'Generation failed', ready: 'Ready to publish',
 };
 
-export default async function ChallengesPage({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+export default async function ChallengesPage({ searchParams }: { searchParams: Promise<{ view?: string; page?: string }> }) {
   const supabase = await createAuthClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError && authError.name !== 'AuthSessionMissingError') throw new Error('Unable to check your session. Please refresh.');
-  const { view } = await searchParams;
+  const { view, page: requestedPage } = await searchParams;
+  const page = resultsPage(requestedPage);
   const selected = view === 'results' || view === 'finished' ? 'results' : view === 'yours' && user ? 'yours' : 'open';
   const tabs = [{ value: 'open', label: 'Open' }, { value: 'results', label: 'Results' }, ...(user ? [{ value: 'yours', label: 'Yours' }] : [])];
+  const activityPromise = user && selected === 'open'
+    ? getReturnVisits(supabase, user.id).catch(() => ({ draft: null, recent: [], error: true }))
+    : null;
+  let activity: ReturnData | null = null;
   let content;
   if (!user) content = <><ChallengeDemo /><p className="guest-note">Live challenges and results are currently shared with signed-in members. Sign in to take part.</p></>;
   else if (selected === 'results') {
-    const winners = await getChallengeWinners(supabase).catch(() => null);
-    content = winners ? <><Winners winners={winners} /><CompletedRounds /></> : <p role="alert">Results couldn’t be loaded. Please refresh to try again.</p>;
+    const result = await getRoundResults(supabase, page).catch(() => null);
+    if (!result) content = <p role="alert">Results couldn’t be loaded. Please refresh to try again.</p>;
+    else {
+      const { rounds, more } = result;
+      content = <>
+        {rounds.length ? <><h2>Finished rounds</h2><p className="muted">Every outcome: wins, ties, and rounds without votes.</p><RoundResults rounds={rounds} /></>
+          : page === 1 ? <ArrivalEmpty results /> : <p>No rounds on this page. Return to the previous page for recent results.</p>}
+        {(page > 1 || more) && <nav className="empty-actions" aria-label="Results pages">
+          {page > 1 && <Link className="button" href={`/challenges?view=results&page=${page - 1}`}>Previous results</Link>}
+          {more && <Link className="button" href={`/challenges?view=results&page=${page + 1}`}>Older results</Link>}
+        </nav>}
+      </>;
+    }
   } else {
     let query = supabase.from('challenges').select('id,creator_id,situation,joke_context,image_description,image_path,template_url,status,closes_at,hidden_at').order('created_at', { ascending: false }).limit(50);
     query = selected === 'yours' ? query.eq('creator_id', user.id) : query.eq('status', 'published').is('hidden_at', null).gt('closes_at', new Date().toISOString());
@@ -36,11 +52,14 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
     const paths = [...new Set((data ?? []).flatMap(c => c.image_path ? [c.image_path as string] : []))];
     const urls = paths.length ? (await supabase.storage.from('challenge-images').createSignedUrls(paths, 3600)).data : [];
     const signed = new Map((urls ?? []).flatMap(item => item.path && item.signedUrl && !item.error ? [[item.path, item.signedUrl]] : []));
-    content = error || voteError ? <p role="alert">Challenges couldn’t be loaded. Please refresh to try again.</p> : !data?.length ? <section className="empty-challenges">
-      <h2>{selected === 'yours' ? 'Your first challenger is waiting.' : 'No open rounds right now.'}</h2>
-      <p>{selected === 'yours' ? 'Choose an image, write a caption, and take on AI.' : 'Explore the results, or start a new round with your own image.'}</p>
-      <div className="empty-actions"><Link className="button button-primary" href="/challenges/new">Start a challenge</Link><Link className="button" href="/challenges?view=results">Explore results</Link></div>
-    </section> : <><ul className="challenge-feed">{cards!.map(c => {
+    activity = await activityPromise;
+    content = error || voteError ? <p role="alert">Challenges couldn’t be loaded. Please refresh to try again.</p> : !data?.length ? <ArrivalEmpty draft={activity?.draft} yours={selected === 'yours'} /> : <>
+      {selected === 'open' && cards!.every(c => c.creator_id === user.id || voted.has(c.id)) && <section className="caught-up" role="status">
+        <h2>{cards!.every(c => c.creator_id === user.id) ? 'Your rounds are open.' : data.length === 50 ? 'You’ve voted on the available rounds shown here.' : 'You’re caught up.'}</h2>
+        <p>{cards!.every(c => c.creator_id === user.id) ? 'Your challenges are waiting for the community’s votes.' : 'You can revisit your picks below and undo or switch a vote until closing.'}</p>
+        <Link href="/challenges/new">Start another challenge →</Link>
+      </section>}
+      <ul className="challenge-feed">{cards!.map(c => {
       const own = c.creator_id === user.id;
       const hasVoted = voted.has(c.id);
       const image = c.image_path ? signed.get(c.image_path) : c.template_url;
@@ -62,14 +81,8 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
     <main className="page-shell challenge-home" id="challenges">
       <div className="challenge-hero"><span className="eyebrow">One image. You versus AI.</span><h1>{user ? 'Let the captions compete.' : 'Can you out-caption AI?'}</h1><p>Pick the funnier caption. Find out who wrote it when the round ends.</p></div>
       {user && <nav className="challenge-tabs" aria-label="Challenge filters">{tabs.map(tab => <Link key={tab.value} href={`/challenges?view=${tab.value}`} aria-current={selected === tab.value ? 'page' : undefined}>{tab.label}</Link>)}</nav>}
+      {activity && <ReturnVisits {...activity} />}
       {content}
     </main>
   </>;
-}
-
-async function CompletedRounds() {
-  const supabase = await createAuthClient();
-  const { data, error } = await supabase.from('challenges').select('id,situation').eq('status', 'published').is('hidden_at', null).lte('closes_at', new Date().toISOString()).order('closes_at', { ascending: false }).limit(50);
-  if (error) return <p role="alert">Finished rounds couldn’t be loaded.</p>;
-  return data?.length ? <section className="completed-rounds"><h2>Finished rounds</h2><p className="muted">Including ties and rounds without votes.</p><ul>{data.map(c => <li key={c.id}><Link href={`/challenges/${c.id}`}>{c.situation} <span aria-hidden="true">→</span></Link></li>)}</ul></section> : null;
 }

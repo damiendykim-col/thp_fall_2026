@@ -30,8 +30,8 @@ test("only closed, unique winners appear with correct attribution and original c
   await expect(page.getByRole("link",{name:"Results",exact:true})).toHaveAttribute("aria-current","page");
   await expect(page.getByText("human challenge human caption",{exact:true})).toBeVisible();
   await expect(page.getByText("ai challenge ai caption",{exact:true})).toBeVisible();
-  await expect(page.getByText("Human-written",{exact:true})).toBeVisible();
-  await expect(page.getByText("AI-generated",{exact:true})).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Human caption wins" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "AI caption wins" })).toBeVisible();
   await page.locator(`a[href="/challenges/${ids.human}"]`).first().click();
   await expect(page).toHaveURL(new RegExp(`/challenges/${ids.human}$`));
   await page.goto("/images?view=templates");
