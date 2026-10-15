@@ -16,6 +16,7 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos, destin
   const changed = { first: draft.first !== baseline.first, last: draft.last !== baseline.last, joke: draft.joke !== baseline.joke };
   const dirty = changed.first || changed.last || changed.joke || Boolean(draft.previous || draft.needsFile);
   const [notice, setNotice] = useState("");
+  const [saveNotice, setSaveNotice] = useState<"idle" | "saved">("idle");
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -35,7 +36,7 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos, destin
   }, [profile.id, profile.avatar_path, previousPhotos]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
   function change(next: ProfileDraft) {
-    setDraft(next); setNotice("");
+    setDraft(next); setNotice(""); setSaveNotice("idle");
     const hasChanges = next.first !== baseline.first || next.last !== baseline.last || next.joke !== baseline.joke || Boolean(next.previous || next.needsFile);
     writeDraft(profile.id, hasChanges ? next : null);
   }
@@ -48,13 +49,14 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos, destin
     resetFile(); change({ ...draft, previous: "", needsFile: false });
   }
   const [result, action, pending] = useActionState<ProfileResult, FormData>(async (previous, data) => {
+    setSaveNotice("idle");
     if (localFile.current) data.set("photo", localFile.current);
     const saved = await saveProfile(previous, data);
     if (saved.success) {
       writeDraft(profile.id, null);
       const savedDraft: ProfileDraft = { first: String(data.get("first_name")).trim(), last: String(data.get("last_name")).trim(), joke: String(data.get("favorite_joke") ?? "").trim(), previous: "", needsFile: false };
       setDraft(savedDraft); setBaseline(savedDraft);
-      resetFile(); setNotice(""); setOpen(false);
+      resetFile(); setNotice(""); setOpen(false); setSaveNotice("saved");
     }
     return saved;
   }, {});
@@ -102,7 +104,7 @@ export default function ProfileForm({ profile, avatarUrl, previousPhotos, destin
       <p className="field-help" id="favorite-joke-help">Optional. Up to {MAX_FAVORITE_JOKE_CHARS} characters. Your joke is visible to other members. We may use it to improve personalized joke suggestions and generation.</p>
       {notice && <p role="status">{notice}</p>}
       {result.error && <p role="alert">{result.error}</p>}
-      {result.success && !dirty && <p role="status">Profile saved. <Link className="confirmation-link" href={destination}>Continue to challenges</Link></p>}
+      {saveNotice === "saved" && <p role="status">Profile saved. <Link className="confirmation-link" href={destination}>Continue to challenges</Link></p>}
       <div className="profile-actions">
         <button className={`button ${dirty ? "save-changed" : ""}`} type="submit" disabled={pending}>{pending ? "Saving…" : "Save profile"}</button>
         {dirty && <button className="button" type="button" onClick={() => {

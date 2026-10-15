@@ -65,7 +65,13 @@ export async function completeProfile(page: Page, joke = "A SQL query walks into
   await page.getByRole("textbox", { name: "Last name", exact: true }).fill("PrivateLast");
   await page.getByRole("textbox", { name: "Favorite joke", exact: true }).fill(joke);
   await page.getByRole("button", { name: "Save profile", exact: true }).click();
-  await expect(page.getByText("Profile saved.", { exact: false })).toBeVisible();
+  const form = page.locator("form.profile-form");
+  const saved = form.getByRole("status").filter({ hasText: "Profile saved." });
+  const alert = form.getByRole("alert");
+  await expect(saved.or(alert)).toBeVisible();
+  if (await alert.isVisible()) {
+    throw new Error(`Profile save failed: ${(await alert.textContent())?.trim() ?? "unknown error"}`);
+  }
 }
 export const gif = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
 

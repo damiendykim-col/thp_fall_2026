@@ -84,3 +84,14 @@ it("uses newly saved text as the baseline for subsequent edits and discard", asy
   expect(joke).toHaveValue("Saved joke");
   expect(joke).not.toHaveClass("input-changed");
 });
+
+it("shows a stable success status after saving and clears it after a new edit", async () => {
+  jest.mocked(saveProfile).mockResolvedValue({ success: true });
+  render(form());
+  const joke = screen.getByLabelText("Favorite joke");
+  fireEvent.change(joke, { target: { value: "Saved joke" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save profile" }));
+  await screen.findByText("Profile saved.", { exact: false });
+  fireEvent.change(joke, { target: { value: "Unsaved tweak" } });
+  expect(screen.queryByText("Profile saved.", { exact: false })).toBeNull();
+});

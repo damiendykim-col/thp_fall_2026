@@ -92,6 +92,11 @@ it("does not report success for an unexpected RPC response", async () => {
   expect(await saveProfile({}, form())).toHaveProperty("error");
   expect(revalidatePath).not.toHaveBeenCalled();
 });
+it("surfaces thrown RPC failures as an action error", async () => {
+  rpc.mockRejectedValue(new Error("fetch failed"));
+  expect(await saveProfile({}, form())).toEqual({ error: "Your profile couldn’t be saved. fetch failed" });
+  expect(revalidatePath).not.toHaveBeenCalled();
+});
 it("clears an empty joke without changing the current photo", async () => {
   const data = form(); data.set("favorite_joke", " ");
   expect(await saveProfile({}, data)).toEqual({ success: true });
