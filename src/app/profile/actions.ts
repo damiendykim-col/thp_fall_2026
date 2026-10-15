@@ -6,6 +6,13 @@ import { AVATAR_TYPES, MAX_AVATAR_BYTES, validateFavoriteJoke, validateNames } f
 
 export type ProfileResult = { error?: string; success?: boolean };
 
+function explainSaveFailure(error: unknown): string {
+  const detail = typeof error === "object" && error !== null && "message" in error && typeof error.message === "string"
+    ? error.message.trim()
+    : "";
+  return detail ? `Your profile couldn’t be saved. ${detail}` : "Your profile couldn’t be saved. Please reload to check your changes before trying again.";
+}
+
 export async function saveProfile(_previous: ProfileResult, form: FormData): Promise<ProfileResult> {
   const { supabase, user } = await requireUser();
   const first = form.get("first_name");
@@ -36,20 +43,28 @@ export async function saveProfile(_previous: ProfileResult, form: FormData): Pro
   }
   // The database validates photo ownership and saves all fields in one transaction.
   // No caller-supplied user ID; the RPC resolves ownership from auth.uid().
-  const { data: saved, error } = await supabase.rpc("save_my_profile", {
-    p_first_name: (first as string).trim(),
-    p_last_name: (last as string).trim(),
-    p_favorite_joke: favoriteJokeText || null,
-    p_avatar_path: newPath || selected || null,
-    p_avatar_is_upload: Boolean(newPath),
-  });
+  let saved: string | null = null;
+  let error: { code?: string } | null = null;
+  try {
+    const response = await supabase.rpc("save_my_profile", {
+      p_first_name: (first as string).trim(),
+      p_last_name: (last as string).trim(),
+      p_favorite_joke: favoriteJokeText || null,
+      p_avatar_path: newPath || selected || null,
+      p_avatar_is_upload: Boolean(newPath),
+    });
+    saved = response.data as string | null;
+    error = response.error;
+  } catch (rpcError) {
+    return { error: explainSaveFailure(rpcError) };
+  }
   if (error || saved !== user.id) {
     // Only a definite database rejection proves the upload was not committed.
     // A lost response may follow a successful commit; never delete that photo.
     if (newPath && error && ["22023", "23503", "23514", "42501", "P0001"].includes(error.code)) {
       await supabase.storage.from("avatars").remove([newPath]);
     }
-    return { error: "Your profile couldn’t be saved. Please reload to check your changes before trying again." };
+    return { error: explainSaveFailure(error) };
   }
   revalidatePath("/profile");
   revalidatePath("/members");
