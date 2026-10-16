@@ -3,7 +3,10 @@ import SiteHeader from "@/components/site-header";
 import { createAuthClient } from "@/lib/supabase/server";
 import { getReturnVisits, getRoundResults, resultsPage, type ReturnData } from "@/lib/challenges/arrival";
 import { ArrivalEmpty, ReturnVisits, RoundResults } from "./arrival";
-import ChallengeDemo from "./demo";
+import GuestExperience from "./guest-experience";
+import SignIn from "../login/sign-in";
+import TestSignIn from "../login/test-sign-in";
+import { isTestAuthEnabled } from "@/lib/test-auth-config";
 
 const draftStatusLabels: Record<string, string> = {
   draft: 'Draft', generating: 'Generating caption', failed: 'Generation failed', ready: 'Ready to publish',
@@ -22,7 +25,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
     : null;
   let activity: ReturnData | null = null;
   let content;
-  if (!user) content = <><ChallengeDemo /><p className="guest-note">Live challenges and results are currently shared with signed-in members. Sign in to take part.</p></>;
+  if (!user) content = <GuestExperience signIn={<><SignIn destination="/challenges/new" />{isTestAuthEnabled() && <TestSignIn destination="/challenges/new" />}</>} />;
   else if (selected === 'results') {
     const result = await getRoundResults(supabase, page).catch(() => null);
     if (!result) content = <p role="alert">Results couldn’t be loaded. Please refresh to try again.</p>;
@@ -79,7 +82,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
   }
   return <><a className="skip-link" href="#challenges">Skip to challenges</a><SiteHeader landing />
     <main className="page-shell challenge-home" id="challenges">
-      {user ? <div className="challenge-heading"><h1>Caption challenges</h1><Link className="button button-primary" href="/challenges/new">Challenge AI</Link></div> : <div className="challenge-hero"><span className="eyebrow">Your wit. An AI opponent. The crowd decides.</span><h1>Can you out-joke AI?</h1><p>Upload an image, write your best caption, and let the community pick a winner.</p><div className="demo-actions"><a className="button button-primary" href="#practice">Try a practice round</a><span className="landing-or">or</span><Link className="button" href="/login?next=%2Fchallenges%2Fnew">Sign in</Link></div></div>}
+      {user ? <div className="challenge-heading"><h1>Caption challenges</h1><Link className="button button-primary" href="/challenges/new">Challenge AI</Link></div> : <div className="challenge-hero"><span className="eyebrow">Your wit. An AI opponent. The crowd decides.</span><h1>Can you out-joke AI?</h1><p>Upload an image, write your best caption, and let the community pick a winner.</p></div>}
       {user && <nav className="challenge-tabs" aria-label="Challenge filters">{tabs.map(tab => <Link key={tab.value} href={`/challenges?view=${tab.value}`} aria-current={selected === tab.value ? 'page' : undefined}>{tab.label}</Link>)}</nav>}
       {activity && <ReturnVisits {...activity} />}
       {content}

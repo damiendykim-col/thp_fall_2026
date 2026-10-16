@@ -5,14 +5,19 @@ test('signed-out home demonstrates the challenge and keeps account and legacy se
   await expect(page.getByRole('heading', { name: 'Can you out-joke AI?' })).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(nav).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveCount(1);
-  await page.getByRole('link', { name: 'Try a practice round' }).click();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Practice round', exact: true })).toHaveAttribute('aria-pressed', 'true');
   const example = page.getByRole('region', { name: 'Practice challenge' });
   const mutations: string[] = [];
   page.on('request', request => { if (request.method() !== 'GET') mutations.push(request.url()); });
   await example.getByRole('button', { name: 'Rainy commute' }).click();
   await example.getByRole('button', { name: 'Use this image' }).click();
   await example.getByLabel('Your caption').fill('My umbrella quit before I did.');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(example).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
+  await page.getByRole('button', { name: 'Practice round', exact: true }).click();
+  await expect(example.getByLabel('Your caption')).toHaveValue('My umbrella quit before I did.');
   await example.getByRole('button', { name: 'Meet your opponent' }).click();
   await example.getByRole('button', { name: 'Try voting' }).click();
   const caption = example.getByRole('button', { name: /Caption 1/ });
@@ -28,18 +33,23 @@ test('signed-out home demonstrates the challenge and keeps account and legacy se
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('home-mobile.png'), fullPage: true });
+  await example.getByRole('button', { name: 'Start a real challenge' }).click();
+  await expect(page.getByRole('heading', { name: 'Ready for a real round?' })).toBeFocused();
+  await page.screenshot({ path: testInfo.outputPath('sign-in-mobile.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Practice round', exact: true }).click();
   await example.getByRole('button', { name: 'Restart practice' }).click();
   await example.getByRole('button', { name: 'Use this image' }).click();
   await expect(example.getByLabel('Your caption')).toHaveValue('');
   expect(mutations).toEqual([]);
-  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
 });
 
 test('sign-in to create survives onboarding and account controls stay accessible', async ({ page, accounts }) => {
   const account = await accounts.create();
   await page.goto('/');
-  await page.getByRole('link', { name: 'Sign in', exact: true }).click();
-  await expect(page).toHaveURL(/\/login\?next=%2Fchallenges%2Fnew$/);
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('button', { name: 'Continue with Google' })).toBeVisible();
   await page.getByLabel('Test email', { exact: true }).fill(account.email);
   await page.getByLabel('Test password', { exact: true }).fill(account.password);
   await page.getByRole('button', { name: 'Sign in with test account' }).click();

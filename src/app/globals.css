@@ -330,3 +330,11 @@ ol.creation-progress { padding: 0; }
 .demo-progress::-webkit-progress-value { background: var(--accent); }
 .demo-progress::-moz-progress-bar { background: var(--accent); }
 .landing-or { align-self: center; color: var(--muted); }
+.landing-options { display: flex; align-items: center; gap: 16px; margin: 0 0 28px; }
+.landing-options .button { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; margin: 0; font-size: 16px; line-height: 1.25; text-transform: uppercase; }
+.landing-options .landing-or { font-size: 18px; line-height: 1; font-weight: 600; }
+.landing-sign-in { padding: clamp(24px, 5vw, 56px); border: 1px solid var(--border); border-radius: 10px; background: #0b0b0b; }
+.landing-sign-in h2 { margin: 16px 0; }
+.landing-sign-in p { max-width: 48ch; line-height: 1.6; margin: 16px 0; }
+#practice-panel[hidden], #sign-in-panel[hidden] { display: none; }
+@media (max-width: 420px) { .landing-options { gap: 10px; } .landing-options .button { padding: 12px; font-size: 14px; } }

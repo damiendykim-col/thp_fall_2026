@@ -8,7 +8,7 @@ const examples = [
 ];
 const steps = ['Choose your image', 'Write your caption', 'Meet your opponent', 'Try the voting', 'Preview the reveal'];
 
-export default function ChallengeDemo({ signedIn = false }: { signedIn?: boolean }) {
+export default function ChallengeDemo({ signedIn = false, onSignIn }: { signedIn?: boolean; onSignIn?: () => void }) {
   const [step, setStep] = useState(0);
   const [image, setImage] = useState(0);
   const [caption, setCaption] = useState('');
@@ -56,7 +56,7 @@ export default function ChallengeDemo({ signedIn = false }: { signedIn?: boolean
           : <div key={index} className={`demo-caption ${choice === index ? 'selected' : ''}`}><span>{index === 0 ? 'Your caption' : 'Example AI opponent'}</span>{body}{choice === index && <strong>Your practice pick</strong>}</div>)}
         <div className="demo-actions">{step === 3
           ? <button className="button button-primary" disabled={choice === null} onClick={() => go(4)}>Preview the reveal</button>
-          : <Link prefetch={false} className="button button-primary" href={signedIn ? '/challenges/new' : '/login?next=%2Fchallenges%2Fnew'}>Start a real challenge</Link>}</div>
+          : onSignIn ? <button className="button button-primary" onClick={onSignIn}>Start a real challenge</button> : <Link prefetch={false} className="button button-primary" href={signedIn ? '/challenges/new' : '/login?next=%2Fchallenges%2Fnew'}>Start a real challenge</Link>}</div>
       </>}
       {step > 0 && <div className="demo-actions"><button className="button" onClick={() => go(step - 1)}>Back</button><button className="button" onClick={reset}>Restart practice</button></div>}
     </div>

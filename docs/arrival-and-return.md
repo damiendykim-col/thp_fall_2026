@@ -4,12 +4,13 @@ Release 4 — October 15, 2026.
 
 ## Experience
 
-- Signed-out visitors enter through “Try a practice round,” beside “Sign in.” The signed-out landing header shows only the wordmark;
+- Signed-out visitors switch between PRACTICE ROUND and SIGN IN in the same view. The signed-out landing header shows only the wordmark;
   signed-in navigation remains available. Five steps cover image choice, caption writing (with an optional
   suggestion), a prepared opponent, voting, and a time-skipped reveal. Back and
   Restart controls keep the walkthrough reversible. Practice state lives only in
   browser memory and disappears on reload; nothing is submitted or carried into
-  a real challenge. The final sign-in link retains the create-challenge destination.
+  a real challenge. Switching panels preserves practice progress. The final practice action opens the
+  sign-in panel, which reuses Google login with the create-challenge destination.
 - Practice explicitly switches from creator to voter: real creators cannot vote on
   their own rounds. The reveal shows authorship and the visitor’s practice pick,
   with no fabricated community totals or winner.
