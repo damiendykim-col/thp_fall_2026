@@ -155,6 +155,11 @@ export async function reviewChallenge(owner: string, id: string, includeAI: bool
   const admin = challengeAdmin();
   const { data: challenge, error } = await admin.from("challenges").select("*").eq("id", id).eq("creator_id", owner).single();
   if (error || !challenge || challenge.hidden_at) throw new ModerationError("Challenge unavailable.");
+  // Missing revision indicates schema drift, not permission to skip concurrency protection.
+  if (!Number.isSafeInteger(challenge.revision) || challenge.revision < 0) {
+    logOperation("moderation.revision", "failed", { code: "INVALID_DRAFT_REVISION" });
+    throw new ModerationError("This draft cannot be reviewed because its revision is unavailable. Check the database migration before retrying.");
+  }
   const { data: captions, error: captionError } = await admin.from("challenge_captions").select("body,origin").eq("challenge_id", id);
   const human = captions?.find(c => c.origin === "human");
   const ai = captions?.find(c => c.origin === "ai");
