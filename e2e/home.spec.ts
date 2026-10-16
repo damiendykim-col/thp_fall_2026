@@ -4,7 +4,8 @@ test('signed-out home demonstrates the challenge and keeps account and legacy se
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Can you out-joke AI?' })).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
-  await expect(nav.getByRole('link', { name: /Images|Members|Profile/ })).toHaveCount(0);
+  await expect(nav).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toHaveCount(1);
   await page.getByRole('link', { name: 'Try a practice round' }).click();
   const example = page.getByRole('region', { name: 'Practice challenge' });
   const mutations: string[] = [];
@@ -31,13 +32,13 @@ test('signed-out home demonstrates the challenge and keeps account and legacy se
   await example.getByRole('button', { name: 'Use this image' }).click();
   await expect(example.getByLabel('Your caption')).toHaveValue('');
   expect(mutations).toEqual([]);
-  await expect(nav.getByRole('link', { name: 'Create challenge' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Sign in', exact: true })).toBeVisible();
 });
 
 test('sign-in to create survives onboarding and account controls stay accessible', async ({ page, accounts }) => {
   const account = await accounts.create();
   await page.goto('/');
-  await page.getByRole('link', { name: 'Create challenge' }).click();
+  await page.getByRole('link', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/login\?next=%2Fchallenges%2Fnew$/);
   await page.getByLabel('Test email', { exact: true }).fill(account.email);
   await page.getByLabel('Test password', { exact: true }).fill(account.password);

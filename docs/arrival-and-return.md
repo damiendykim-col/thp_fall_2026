@@ -4,8 +4,8 @@ Release 4 — October 15, 2026.
 
 ## Experience
 
-- Signed-out visitors enter through “Try a practice round,” with Google login still
-  available. Five steps cover image choice, caption writing (with an optional
+- Signed-out visitors enter through “Try a practice round,” beside “Sign in.” The signed-out landing header shows only the wordmark;
+  signed-in navigation remains available. Five steps cover image choice, caption writing (with an optional
   suggestion), a prepared opponent, voting, and a time-skipped reveal. Back and
   Restart controls keep the walkthrough reversible. Practice state lives only in
   browser memory and disappears on reload; nothing is submitted or carried into

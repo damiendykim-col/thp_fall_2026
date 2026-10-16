@@ -329,3 +329,4 @@ ol.creation-progress { padding: 0; }
 .demo-progress::-webkit-progress-bar { background: #333; }
 .demo-progress::-webkit-progress-value { background: var(--accent); }
 .demo-progress::-moz-progress-bar { background: var(--accent); }
+.landing-or { align-self: center; color: var(--muted); }
