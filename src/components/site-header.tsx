@@ -11,7 +11,6 @@ export default async function SiteHeader({ landing = false }: { landing?: boolea
     <Link href="/" className="wordmark" aria-label="Meme Club home">meme club</Link>
     {(!landing || user) && <nav className="account-nav" aria-label="Main navigation">
       <Link href="/challenges" className="nav-link">Challenges</Link>
-      <Link href={user ? '/challenges/new' : '/login?next=%2Fchallenges%2Fnew'} className="button button-primary">Create challenge</Link>
       {user ? <details className="account-menu">
         <summary>Account</summary>
         <div className="account-menu-items">

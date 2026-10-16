@@ -6,7 +6,6 @@ export default function AccountLoading({ title }: { title: "Members" | "Profile"
       <Link href="/" className="wordmark" aria-label="Meme Club home">meme club</Link>
       <nav className="account-nav" aria-label="Main navigation">
         <Link href="/challenges" className="nav-link">Challenges</Link>
-        <Link href="/challenges/new" className="button button-primary">Create challenge</Link>
       </nav>
     </header>
     <main className="page-shell account-page" aria-busy="true">
