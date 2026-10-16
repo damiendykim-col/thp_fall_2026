@@ -7,7 +7,7 @@ test("a first visit has a useful action and an explicitly illustrative example, 
   render(<ArrivalEmpty />);
   expect(screen.getByRole("link", { name: "Start a challenge" })).toHaveAttribute("href", "/challenges/new");
   expect(screen.queryByRole("link", { name: "Explore results" })).not.toBeInTheDocument();
-  expect(screen.getByText("Illustrative captions. No votes are recorded.")).toBeInTheDocument();
+  expect(screen.getByText("Practice round · nothing is saved")).toBeInTheDocument();
   expect(screen.queryByText(/Sign in to vote/)).not.toBeInTheDocument();
 });
 test("empty open feed prioritizes resuming a saved draft", () => {

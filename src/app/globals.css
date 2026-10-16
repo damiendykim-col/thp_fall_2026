@@ -315,3 +315,17 @@ ol.creation-progress { padding: 0; }
 .demo-content input { width: 100%; min-width: 0; padding: .75rem; border: 1px solid var(--border); border-radius: .4rem; background: #151515; color: inherit; }
 .demo-content input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .draft-cancellation { margin-top: 1.5rem; }
+
+/* Guided practice stays local and keeps one step in view. */
+#practice { scroll-margin-top: 24px; }
+.demo-content { min-width: 0; }
+.demo-content h2:focus { outline: none; }
+.demo-progress { width: 100%; height: 5px; accent-color: var(--accent); }
+.demo-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.demo-actions [aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.demo-content blockquote { margin: 16px 0; }
+.demo-caption { overflow-wrap: anywhere; }
+.demo-progress { appearance: none; border: 0; background: #333; }
+.demo-progress::-webkit-progress-bar { background: #333; }
+.demo-progress::-webkit-progress-value { background: var(--accent); }
+.demo-progress::-moz-progress-bar { background: var(--accent); }

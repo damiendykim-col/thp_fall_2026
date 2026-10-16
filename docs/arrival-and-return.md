@@ -4,8 +4,15 @@ Release 4 — October 15, 2026.
 
 ## Experience
 
-- Signed-out visitors retain the interactive illustrative example and Google login
-  entry points. Example selections never write votes.
+- Signed-out visitors enter through “Try a practice round,” with Google login still
+  available. Five steps cover image choice, caption writing (with an optional
+  suggestion), a prepared opponent, voting, and a time-skipped reveal. Back and
+  Restart controls keep the walkthrough reversible. Practice state lives only in
+  browser memory and disappears on reload; nothing is submitted or carried into
+  a real challenge. The final sign-in link retains the create-challenge destination.
+- Practice explicitly switches from creator to voter: real creators cannot vote on
+  their own rounds. The reveal shows authorship and the visitor’s practice pick,
+  with no fabricated community totals or winner.
 - An empty signed-in Open feed offers the latest saved draft to resume, or a new
   challenge to start. A collapsible, explicitly labeled example remains available.
   Empty Results no longer sends people around an Open/Results loop.
@@ -14,7 +21,7 @@ Release 4 — October 15, 2026.
   above the fold. These are not unread/new notifications. Undoing a vote removes
   that association; there is no invented voting history.
 - Signed-in members see a compact heading and Challenge AI action. The signed-out
-  demo allows editing an illustrative contender and revealing demo roles; it makes
+  practice round offers two predefined images and matching prepared captions; it makes
   no provider requests and records no votes.
 - If every displayed open round is already voted on or belongs to the viewer,
   acknowledge it while keeping all cards available. Own-only rounds say they are

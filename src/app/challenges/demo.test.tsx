@@ -1,14 +1,41 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import ChallengeDemo from './demo';
-test('visitors can write a contender and reveal illustrative roles without a live generation', () => {
+const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }));
+function writeCaption() {
+  click('Use this image');
+  fireEvent.change(screen.getByLabelText('Your caption'), { target: { value: 'I put the I in team.' } });
+  click('Meet your opponent');
+}
+test('practice walks through creation, voting, reveal, and sign-in without pretending to record community votes', () => {
   render(<ChallengeDemo />);
-  fireEvent.change(screen.getByLabelText('Try your own caption'), { target: { value: 'I put the I in team.' } });
-  expect(screen.queryByText('Example AI opponent')).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('button', { name: /Caption 1/ }));
-  fireEvent.click(screen.getByRole('button', { name: 'Reveal demo roles' }));
-  expect(screen.getByText('Example AI opponent')).toBeVisible();
-  expect(screen.getByText('Your contender')).toBeVisible();
-  expect(screen.getByText(/No live AI generation or votes/)).toBeVisible();
-  fireEvent.change(screen.getByLabelText('Try your own caption'), { target: { value: 'Changed my mind.' } });
-  expect(screen.queryByText('Example AI opponent')).not.toBeInTheDocument();
+  writeCaption();
+  expect(screen.getByText(/Prepared example/)).toBeVisible();
+  click('Try voting');
+  expect(screen.queryByText('Your caption')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Preview the reveal' })).toBeDisabled();
+  click('Caption 1 I put the I in team.');
+  click('Preview the reveal');
+  expect(screen.getByText('Your caption')).toBeVisible();
+  expect(screen.getByText(/No community votes/)).toBeVisible();
+  expect(screen.getByRole('link', { name: 'Start a real challenge' })).toHaveAttribute('href', '/login?next=%2Fchallenges%2Fnew');
+  click('Restart practice');
+  click('Use this image');
+  expect(screen.getByLabelText('Your caption')).toHaveValue('');
+});
+test('suggestions, back navigation, changing images and undoing a pick work', () => {
+  render(<ChallengeDemo signedIn />);
+  click('Rainy commute');
+  click('Use this image');
+  expect(screen.getByRole('button', { name: 'Meet your opponent' })).toBeDisabled();
+  click('Suggest a caption');
+  click('Meet your opponent');
+  click('Try voting');
+  const option = screen.getByRole('button', { name: /Caption 1/ });
+  fireEvent.click(option);
+  fireEvent.click(option);
+  expect(screen.getByRole('button', { name: 'Preview the reveal' })).toBeDisabled();
+  click('Back'); click('Back');
+  expect(screen.getByLabelText('Your caption')).not.toHaveValue('');
+  click('Back'); click('Group project'); click('Use this image');
+  expect(screen.getByLabelText('Your caption')).toHaveValue('');
 });

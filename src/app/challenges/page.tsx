@@ -79,7 +79,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
   }
   return <><a className="skip-link" href="#challenges">Skip to challenges</a><SiteHeader />
     <main className="page-shell challenge-home" id="challenges">
-      {user ? <div className="challenge-heading"><h1>Caption challenges</h1><Link className="button button-primary" href="/challenges/new">Challenge AI</Link></div> : <div className="challenge-hero"><span className="eyebrow">Your wit. An AI opponent. The crowd decides.</span><h1>Can you out-joke AI?</h1><p>Upload an image, write your best caption, and let the community pick a winner.</p><Link className="button button-primary" href="/login?next=%2Fchallenges%2Fnew">Challenge AI</Link></div>}
+      {user ? <div className="challenge-heading"><h1>Caption challenges</h1><Link className="button button-primary" href="/challenges/new">Challenge AI</Link></div> : <div className="challenge-hero"><span className="eyebrow">Your wit. An AI opponent. The crowd decides.</span><h1>Can you out-joke AI?</h1><p>Upload an image, write your best caption, and let the community pick a winner.</p><a className="button button-primary" href="#practice">Try a practice round</a></div>}
       {user && <nav className="challenge-tabs" aria-label="Challenge filters">{tabs.map(tab => <Link key={tab.value} href={`/challenges?view=${tab.value}`} aria-current={selected === tab.value ? 'page' : undefined}>{tab.label}</Link>)}</nav>}
       {activity && <ReturnVisits {...activity} />}
       {content}
