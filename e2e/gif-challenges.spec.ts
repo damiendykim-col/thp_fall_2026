@@ -45,8 +45,8 @@ test("GIF selection is saved, used by generation and gated by independent modera
   await expect(page.getByRole("button",{name:"Publish for 24 hours",exact:true})).toBeVisible();
   const {data: generation}=await owner.client.from("challenge_generations").select("prompt").eq("challenge_id",id).single();
   expect(generation!.prompt.frames).toEqual(image.selected_frames);
-  await page.getByRole("button",{name:"Publish for 24 hours",exact:true}).click();
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("awaiting moderator review");
+  await expect(page.getByRole("button",{name:"Publish for 24 hours",exact:true})).toBeDisabled();
+  await expect(page.getByText("Waiting for moderator review", { exact: true })).toBeVisible();
   expect((await owner.client.rpc("publish_caption_challenge",{p_challenge:id})).error).toBeTruthy();
   expect((await owner.client.rpc("review_challenge_gif",{p_image:image.id,p_approved:true})).error).toBeTruthy();
   expect((await voter.client.rpc("list_unreviewed_gifs")).error).toBeTruthy();

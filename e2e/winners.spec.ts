@@ -41,7 +41,7 @@ test("only closed, unique winners appear with correct attribution and original c
 test("anonymous visitors can browse templates but winners keep the challenge audience", async ({page}) => {
   await page.goto("/images");
   await expect(page).toHaveURL(/\/challenges\?view=results$/);
-  await expect(page.getByRole("region", {name:"Example challenge"})).toBeVisible();
+  await expect(page.getByRole("region", {name:"Practice challenge"})).toBeVisible();
   await page.goto("/images?view=templates");
   await expect(page.locator(".image-grid img")).toHaveCount(2);
 });

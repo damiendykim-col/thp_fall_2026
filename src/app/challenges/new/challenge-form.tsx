@@ -6,6 +6,8 @@ import { createChallenge, updateChallenge } from "../actions";
 import { uploadChallengeImage, suggestImageDescription, restoreChallengeImage } from "../image-actions";
 import { MAX_CHALLENGE_UPLOAD_BYTES, CHALLENGE_UPLOAD_SIZE_MESSAGE } from "@/lib/challenges/upload-limits";
 import { readChallengeDraft, writeChallengeDraft, type ChallengeDraft } from "@/lib/challenge-draft";
+import WorkStatus from "@/components/work-status";
+import InfoTip from "@/components/info-tip";
 import FrameReview from "./frame-review";
 import type { Storyboard } from "@/lib/challenges/gif-types";
 import type { ChallengeResult } from "@/lib/challenges/types";
@@ -206,18 +208,24 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
     <form action={action} className="challenge-form" onSubmit={e => {
       if (!editing && step !== 2) e.preventDefault();
     }}>
+      <div className="creation-workspace">
+      <aside className="creation-preview">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {imageUrl ? <img src={imageUrl} alt={step === 2 && !editing ? "Your caption’s image" : "Selected challenge image"} /> : <span className="muted">Your image will appear here</span>}
+      </aside>
+      <div className="creation-work">
       {!editing && <>
         <nav aria-label="Challenge creation progress" className="creation-progress">
           <button type="button" aria-current={step === 1 ? "step" : undefined} disabled={pending} onClick={() => changeStep(1)}>1. Image</button>
           <button type="button" aria-current={step === 2 ? "step" : undefined} disabled={pending} onClick={() => changeStep(2)}>2. Your caption</button>
-          <span>3. AI opponent &amp; publish</span>
+          <span>3. Publish</span>
         </nav>
         <h2 ref={stepHeading} tabIndex={-1}>{step === 1 ? "Choose and review your image" : "Write your contender"}</h2>
       </>}
       {draftNotice && <p role="status">{draftNotice}</p>}
       <div className="creation-stage" hidden={!editing && step !== 1}>
-      <p className="muted">Choose an image you have permission to share, then confirm what the AI sees.</p>
-      <p className="muted">Uploads are sent to Google Gemini for description and safety checks. Its free tier may use content to improve Google products.</p>
+
+      <p className="muted">Share only images you have permission to use. Uploads go to Gemini; its free tier may use content to improve Google products.</p>
       <label>Image source
         <select aria-label="Image source" value={source} disabled={pending} onChange={e => { resetReview(); selectedFile.current = null; setPreview(""); setTemplate(""); setSource(e.target.value); }}>
           <option value="upload">Upload an image</option><option value="template">Gallery template</option>
@@ -240,14 +248,11 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
           <span className="muted">Templates use the description you confirm below; the AI does not analyze their frames.</span>
         </label>
       )}
-      {/* Native images preserve animated templates and local upload previews. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      {imageUrl && <img className="challenge-image" src={imageUrl} alt="Selected challenge image" />}
       {storyboard && <FrameReview key={preview} data={storyboard} onConfirm={confirmFrames} onChange={() => { requestVersion.current += 1; setImageReady(false); setNeedsFile(true); setImageId(""); setDescription(""); setSuggestion(""); setConfirmed(false); setManual(false); }} notice="Confirming saves these frames and requests an AI description. A moderator must review the full GIF before publication." />}
       {needsFile && !selectedFile.current && <p role="status">Choose your local file again to continue. File contents are not stored in your browser draft.</p>}
       {imageId && !imageReady && !imageStatus && <p className="muted">Upload saved; description review is not complete.</p>}
       {imageError && imageId && !imageReady && !imageStatus && <button className="button" type="button" disabled={pending} onClick={() => startTransition(() => reviewImage(imageId, requestVersion.current))}>Retry description</button>}
-      {imageStatus && <p role="status">{imageStatus}</p>}
+      {imageStatus && <WorkStatus label={imageStatus} />}
       {imageError && <p role="alert">{imageError}</p>}
       {imageError && source === "upload" && !imageId && selectedFile.current && !storyboard && !imageStatus && <button className="button" type="button" disabled={pending} onClick={() => selectFile(selectedFile.current)}>Retry this image</button>}
       <input type="hidden" name="imageId" value={source === "upload" ? imageId : ""} />
@@ -256,7 +261,7 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
       <details className="image-understanding" open={ready && !imageStatus}>
         <summary><span>Review image understanding</span><span className="review-status">{!ready ? "Choose an image first" : imageStatus ? "Analyzing…" : confirmed ? "Confirmed" : "Confirmation needed"}</span></summary>
         <div className="image-understanding-fields">
-          <p className="muted">This description helps the AI understand the scene. Check it once, then focus on your joke.</p>
+          <InfoTip label="Why confirm the description?">This helps the AI understand the scene. Check visual details before continuing; you can edit or replace the suggestion.</InfoTip>
           <label>Image description
             <textarea aria-label="Image description" name="description" value={description} disabled={Boolean(imageStatus) || pending || !ready} onChange={e => { setDescription(e.target.value); setConfirmed(false); }} required maxLength={500} placeholder="Describe what is visibly in the image, rather than inventing a situation." />
           </label>
@@ -275,26 +280,23 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
       {!editing && <button type="button" className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed} onClick={() => changeStep(2)}>Continue to caption</button>}
       </div>
       <div className="creation-stage" hidden={!editing && step !== 2}>
-      {!editing && imageUrl && <div className="caption-image-preview">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageUrl} alt="Your caption’s image" />
-        <button type="button" className="button" disabled={pending} onClick={() => changeStep(1)}>Back to image</button>
-      </div>}
-      {!editing && !imageUrl && <button type="button" className="button" onClick={() => changeStep(1)}>Back to image</button>}
+      {!editing && <button type="button" className="button" disabled={pending} onClick={() => changeStep(1)}>Back to image</button>}
       <label>Your caption
         <textarea name="caption" value={caption} disabled={pending} onChange={e => setCaption(e.target.value)} required maxLength={280} placeholder="Your best line, up to 280 characters." />
       </label>
       <label>Add context for the joke (optional)
         <textarea name="context" disabled={pending} value={context} onChange={e => setContext(e.target.value)} maxLength={500} placeholder="For example: finding out the assignment was a group project." />
       </label>
-      <p className="muted">Your opponent sees the image and context—not your caption. Both captions get a safety check.</p>
-      <details><summary>Content and AI details</summary><p>Dark humor and satire are welcome; targeted abuse and harmful content are not. Your caption is sent separately to Gemini for safety checking. GIFs are sampled for AI understanding and limited to 120 frames and 30 seconds; a moderator reviews the full animation before publication.</p></details>
+
+      <InfoTip label="Content and AI details">Your opponent sees the image and context, not your caption. Dark humor and satire are welcome; targeted abuse and harmful content are not. Your caption is sent separately to Gemini for safety checking. GIFs are sampled for AI understanding and limited to 120 frames and 30 seconds; a moderator reviews the full animation before publication.</InfoTip>
       {state.error && <p role="alert">{state.error}</p>}
       {!editing && (!ready || !confirmed || Boolean(imageStatus)) && <p role="status">Finish image review in step 1 before creating your draft. Your caption will be kept.</p>}
+      {pending && <WorkStatus label="Checking your caption and saving the draft…" />}
       <button className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed || !caption.trim()}>{pending ? "Saving…" : editing ? "Save changes" : "Create draft"}</button>
       </div>
-      <p className="muted">Draft text is saved in this tab. Unsaved files must be selected again.</p>
+      <InfoTip label="Draft recovery">Unsubmitted text is saved in this tab. Unsaved files must be selected again. Once created, drafts are available in Yours; you can have several while reviews are pending.</InfoTip>
       <button className="button" type="button" disabled={pending || Boolean(imageStatus)} onClick={discard}>{editing ? "Discard edits" : "Discard unfinished challenge"}</button>
+      </div></div>
     </form>
   );
 }

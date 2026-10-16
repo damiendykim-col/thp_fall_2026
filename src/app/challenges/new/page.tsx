@@ -7,5 +7,5 @@ export const maxDuration = 120;
 export default async function NewChallengePage() {
   const { user } = await requireUser("/challenges/new");
   const templates = await getImages();
-  return <><SiteHeader /><main className="page-shell account-page"><h1>Create a challenge</h1><p className="account-intro">You and AI. One image. Let the captions speak for themselves.</p><ChallengeForm userId={user.id} templates={templates} /></main></>;
+  return <><SiteHeader /><main className="page-shell account-page"><h1>Create a challenge</h1><ChallengeForm userId={user.id} templates={templates} /></main></>;
 }

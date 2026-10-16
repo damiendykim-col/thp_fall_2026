@@ -1,6 +1,6 @@
 # Arrival and return visits
 
-Release 4 — October 15, 2026.
+Updated October 16, 2026.
 
 ## Experience
 
@@ -17,7 +17,7 @@ Release 4 — October 15, 2026.
 - An empty signed-in Open feed offers the latest saved draft to resume, or a new
   challenge to start. A collapsible, explicitly labeled example remains available.
   Empty Results no longer sends people around an Open/Results loop.
-- Open shows compact links to resume a draft and visit Results when recent personal
+- Open shows compact links to resume the three most recent saved drafts and visit Results when recent personal
   results exist. Individual result summaries stay on Results, keeping challenges
   above the fold. These are not unread/new notifications. Undoing a vote removes
   that association; there is no invented voting history.
@@ -32,12 +32,38 @@ Release 4 — October 15, 2026.
   link for every completed outcome: winner, tie, or zero votes. It is sorted by
   closing time and ID, with 12 rounds per page and previous/older navigation.
 
+## Signed-in workspace
+
+- Multiple saved drafts were already supported: the database allows ten new
+  challenges per rolling day, with separate generation quotas. This update does
+  not impose a three-active-draft cap or increase provider allowances. The three
+  return links are a display limit; Yours lists the broader collection.
+- Creation keeps the image beside the current step on larger screens and a compact
+  preview above it on phones. The matchup uses the same image/captions card.
+  Content can grow and scroll for long text, errors, and zoom; no forced viewport
+  height clips controls. Editing retains both sections to support revisions.
+- Info buttons open keyboard/touch-accessible popovers (Escape or Close dismisses).
+  Upload/provider disclosures and actionable errors stay visible.
+- Active uploads, analysis, saving, and generation have an animated status graphic,
+  respecting reduced motion. Labels represent the known operation, not invented
+  percentages or internal substeps. Human GIF review uses a static waiting state,
+  with manual refresh, Start another, and View your drafts. Publication stays
+  disabled until approval; the database remains authoritative.
+- Next/Previous links browse the latest 50 visible open rounds, newest first,
+  including already-voted and own rounds. Each detail page makes one bounded,
+  viewer-authorized ID query. Navigation never votes, and undo stays available.
+  If a round closes, is hidden, or falls outside that window, return to the feed.
+  Swipe navigation remains deferred until the explicit navigation is validated.
+- Leaving a page is not a guarantee that an in-flight request completes in the
+  background. Saved drafts can be reopened to check their actual status or retry.
+  No background job queue or notifications are introduced.
+
 ## Data boundaries and cost
 
 All reads use the signed-in Supabase client and existing RLS; no service key,
 permission change, schema migration, AI request, or shared personalized cache is
 introduced. Activity reads run in parallel with feed loading. Each of the three
-activity queries is bounded: one draft, three owned results, three voted results;
+activity queries is bounded: three drafts, three owned results, three voted results;
 the latter two are deduplicated and reduced to the most recent three.
 
 Results reuses `read_caption_challenge` to preserve its database-time disclosure

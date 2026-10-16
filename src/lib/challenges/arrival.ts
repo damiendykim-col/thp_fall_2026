@@ -4,7 +4,7 @@ import type { Challenge } from "./types";
 
 export type RecentRound = { id: string; closes_at: string; joke_context: string | null };
 export type SavedDraft = { id: string; status: string };
-export type ReturnData = { draft: SavedDraft | null; recent: RecentRound[]; error: boolean };
+export type ReturnData = { draft: SavedDraft | null; drafts?: SavedDraft[]; recent: RecentRound[]; error: boolean };
 export type ResultRound = Challenge & { imageUrl: string | null };
 
 // All queries use the viewer's client/RLS, never a service key or shared cache.
@@ -14,7 +14,7 @@ export async function getReturnVisits(client: SupabaseClient, userId: string): P
   const [drafts, own, voted] = await Promise.all([
     client.from("challenges").select("id,status").eq("creator_id", userId).is("hidden_at", null)
       .is("published_at", null).in("status", ["draft", "ready", "failed", "generating"])
-      .order("created_at", { ascending: false }).limit(1),
+      .order("created_at", { ascending: false }).limit(3),
     client.from("challenges").select(fields).eq("creator_id", userId).eq("status", "published")
       .is("hidden_at", null).lte("closes_at", now).order("closes_at", { ascending: false }).limit(3),
     client.from("challenge_votes").select(`round:challenges!inner(${fields})`).eq("user_id", userId)
@@ -24,7 +24,7 @@ export async function getReturnVisits(client: SupabaseClient, userId: string): P
   const votedRounds = (voted.error ? [] : voted.data ?? []).flatMap(row => row.round) as unknown as RecentRound[];
   const recent = [...new Map([...(own.error ? [] : own.data ?? []), ...votedRounds].map(row => [row.id, row as RecentRound])).values()]
     .sort((a, b) => b.closes_at.localeCompare(a.closes_at)).slice(0, 3);
-  return { draft: drafts.error ? null : drafts.data?.[0] ?? null, recent, error: Boolean(drafts.error || own.error || voted.error) };
+  return { drafts: drafts.error ? [] : drafts.data ?? [], draft: drafts.error ? null : drafts.data?.[0] ?? null, recent, error: Boolean(drafts.error || own.error || voted.error) };
 }
 
 export const RESULTS_PAGE_SIZE = 12;

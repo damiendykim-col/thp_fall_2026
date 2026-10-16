@@ -15,7 +15,7 @@ test("return summaries merge and deduplicate the user's most recent owned and vo
   const votes = query({ data: [{ round: newest }], error: null });
   const from = jest.fn().mockReturnValueOnce(drafts).mockReturnValueOnce(own).mockReturnValueOnce(votes);
   const data = await getReturnVisits({ from } as unknown as SupabaseClient, "viewer");
-  expect(data).toEqual({ draft: { id: "draft", status: "ready" }, recent: [newest, older], error: false });
+  expect(data).toEqual({ drafts: [{ id: "draft", status: "ready" }], draft: { id: "draft", status: "ready" }, recent: [newest, older], error: false });
   expect(drafts.eq).toHaveBeenCalledWith("creator_id", "viewer");
   expect(votes.eq).toHaveBeenCalledWith("user_id", "viewer");
   expect(votes.is).toHaveBeenCalledWith("round.hidden_at", null);

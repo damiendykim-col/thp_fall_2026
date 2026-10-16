@@ -338,3 +338,52 @@ ol.creation-progress { padding: 0; }
 .landing-sign-in p { max-width: 48ch; line-height: 1.6; margin: 16px 0; }
 #practice-panel[hidden], #sign-in-panel[hidden] { display: none; }
 @media (max-width: 420px) { .landing-options { gap: 10px; } .landing-options .button { padding: 12px; font-size: 14px; } }
+
+/* Focused creation and matchup workspace: grow for content instead of clipping it. */
+.challenge-form { max-width: none; }
+.creation-workspace, .matchup-card { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); border: 1px solid var(--border); border-radius: 12px; background: #0b0b0b; margin-block: 20px; }
+.creation-preview, .matchup-media { min-width: 0; padding: 20px; background: #151515; display: grid; place-items: center; align-content: start; border-radius: 12px 0 0 12px; }
+.creation-preview img, .matchup-media .challenge-image { width: 100%; height: auto; max-height: 55svh; object-fit: contain; margin: 0; position: sticky; top: 20px; }
+.creation-work, .matchup-body { min-width: 0; padding: 24px; }
+.creation-work { display: grid; gap: 16px; }
+.creation-stage { gap: 12px; }
+.creation-stage textarea { min-height: 4.5rem; }
+.matchup-page { padding-block: 24px 48px; }
+.matchup-page h1 { font-size: 26px; margin-top: 16px; }
+.matchup-body .caption-options { grid-template-columns: 1fr; gap: 12px; }
+.matchup-body .caption-option { padding: 16px; }
+.matchup-body .caption-option p { margin: 10px 0; overflow-wrap: anywhere; }
+.matchup-body .challenge-controls { margin-block: 16px; }
+.round-navigation, .draft-exits { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-block: 16px; }
+.draft-exits { font-size: 14px; justify-content: flex-start; }
+.work-status { display: flex; align-items: center; gap: 14px; padding: 14px; margin-block: 12px; border: 1px solid #514900; border-radius: 8px; background: #1b190b; }
+.work-status-visual { color: var(--accent); font-size: 28px; flex-shrink: 0; }
+.working .work-status-visual { animation: work-pulse 1.5s ease-in-out infinite; }
+.work-status-detail { font-size: 14px; line-height: 1.5; color: var(--muted); }
+.work-status-detail p { margin: 6px 0 0; }
+@keyframes work-pulse { 50% { opacity: .4; transform: scale(.8) rotate(30deg); } }
+@media (prefers-reduced-motion: reduce) { .working .work-status-visual { animation: none; } }
+.info-tip { display: inline-block; margin-inline: 6px; vertical-align: middle; }
+.info-trigger { border: 1px solid var(--muted); border-radius: 50%; width: 28px; height: 28px; color: var(--accent); font: italic 600 16px Georgia, serif; cursor: pointer; }
+.info-content { position: fixed; inset: 0; margin: auto; width: min(420px, calc(100vw - 32px)); padding: 22px; border: 1px solid var(--border); border-radius: 10px; background: #151515; color: var(--foreground); line-height: 1.6; box-shadow: 0 8px 32px #0008; }
+.info-content:popover-open { display: grid; gap: 14px; }
+.info-content::backdrop { background: #0006; }
+.return-visits { flex-wrap: wrap; }
+.return-visits a { border: 1px solid var(--border); border-radius: 6px; padding: 10px; font-size: 13px; }
+@media (max-width: 760px) {
+  .creation-workspace, .matchup-card { grid-template-columns: 1fr; }
+  .creation-preview, .matchup-media { padding: 12px; border-radius: 12px 12px 0 0; }
+  .creation-preview img, .matchup-media .challenge-image { position: static; max-height: 24svh; }
+  .creation-work, .matchup-body { padding: 16px; }
+  .round-navigation .button { font-size: 13px; }
+}
+@media (max-width: 760px) {
+  .challenge-form { margin-top: 12px; }
+  .creation-workspace, .matchup-card { margin-block: 12px; }
+  .creation-preview img, .matchup-media .challenge-image { max-height: 16svh; }
+  .creation-work { gap: 12px; }
+  .creation-work .creation-progress { gap: 6px; font-size: 12px; }
+  .creation-work .creation-progress button, .creation-work .creation-progress span { padding: 8px; }
+  .creation-stage > button[type="button"]:not(.button-primary) { justify-self: start; }
+  .round-navigation { position: sticky; bottom: 0; padding: 10px 0; margin-bottom: 0; background: var(--background); z-index: 5; }
+}
