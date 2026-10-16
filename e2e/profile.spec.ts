@@ -15,7 +15,7 @@ test("signup triggers, onboarding, session persistence and sign-out", async ({ p
   const savedIdentity = await account.client.from("profiles").select("first_name,last_name").single();
   expect(savedIdentity.error).toBeNull();
   expect(savedIdentity.data).toEqual({ first_name: "PrivateFirst", last_name: "PrivateLast" });
-  const savedMember = await account.client.from("member_profiles").select("favorite_joke,is_listed").single();
+  const savedMember = await account.client.from("member_profiles").select("favorite_joke,is_listed").eq("profile_id", account.id).single();
   expect(savedMember.error).toBeNull();
   expect(savedMember.data).toEqual({ favorite_joke: "A SQL query walks into a bar.", is_listed: true });
   await page.getByRole("link", { name: "Continue to challenges" }).click();
@@ -45,7 +45,7 @@ test("text drafts survive navigation, show edited cues, and can be discarded", a
   await expect(joke).toHaveClass(/input-changed/);
   await page.getByRole("link", { name: "Challenges", exact: true }).click();
   await expect(page).toHaveURL(/\/challenges$/);
-  await expect(page.getByRole("heading", { name: "Let the captions compete." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Caption challenges" })).toBeVisible();
   await page.getByText("Account", { exact: true }).click();
   await page.getByRole("link", { name: "Profile", exact: true }).click();
   await expect(joke).toHaveValue("Unsaved joke");

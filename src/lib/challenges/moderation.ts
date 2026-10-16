@@ -1,4 +1,5 @@
 import "server-only";
+import { logOperation } from "@/lib/operation-log";
 import { imageParts } from "./media";
 import { createHash } from "node:crypto";
 import { challengeAdmin } from "./server";
@@ -26,7 +27,11 @@ Consider the image and text together when both are supplied. Return only JSON wi
 const categories = ["none", "hate", "harassment", "violence", "sexual", "self_harm", "privacy", "provider_block"] as const;
 type Category = typeof categories[number];
 type Verdict = { allowed: boolean; category: Category };
-export class ModerationError extends Error {}
+export class ModerationError extends Error {
+  constructor(message: string, public readonly outcome: "failed" | "rejected" = "failed") {
+    super(message);
+  }
+}
 const unavailable = "Safety checking is unavailable. Nothing new can be published until it succeeds. Please retry later.";
 const reasons: Record<Category, string> = {
   none: "", hate: "hateful or dehumanizing content", harassment: "targeted harassment",
@@ -105,8 +110,8 @@ export async function ensureModerated(owner: string, phase: "image" | "human" | 
   if (error || !check) throw new ModerationError("Safety checks are busy or at their limit. Please retry later.");
   if (!check.claimed) {
     if (check.status === "approved") return check.id;
-    if (check.status === "blocked") throw new ModerationError(`Please revise or replace this content: ${reasons[check.category as Category] || "it did not pass safety review"}.`);
-    throw new ModerationError("A safety check is already running. Retry after two minutes if it was interrupted.");
+    if (check.status === "blocked") throw new ModerationError(`Please revise or replace this content: ${reasons[check.category as Category] || "it did not pass safety review"}.`, "rejected");
+    throw new ModerationError("A safety check is already running. Retry after two minutes if it was interrupted.", "rejected");
   }
   let verdict: Verdict;
   try {
@@ -119,7 +124,7 @@ export async function ensureModerated(owner: string, phase: "image" | "human" | 
     status: verdict.allowed ? "approved" : "blocked", category: verdict.category,
   }).eq("id", check.id).eq("started_at", check.started_at).eq("status", "running").select("id").maybeSingle();
   if (saveError || !saved) throw new ModerationError(unavailable);
-  if (!verdict.allowed) throw new ModerationError(`Please revise or replace this content: ${reasons[verdict.category]}.`);
+  if (!verdict.allowed) throw new ModerationError(`Please revise or replace this content: ${reasons[verdict.category]}.`, "rejected");
   return check.id;
 }
 
@@ -169,7 +174,10 @@ export async function reviewChallenge(owner: string, id: string, includeAI: bool
   if (includeAI && ai) updates.ai_moderation_id = await ensureModerated(owner, "ai", humanReviewText(description, context, ai.body), bytes);
   const { data: updated, error: updateError } = await admin.from("challenges").update(updates).eq("id", id).eq("creator_id", owner).eq("revision", challenge.revision).is("hidden_at", null).select("id").maybeSingle();
   if (!updateError && !updated) throw new ModerationError("This draft changed during safety review. Reload and retry.");
-  if (updateError) throw new ModerationError(unavailable);
+  if (updateError) {
+    logOperation("moderation.link", "failed", updateError);
+    throw new ModerationError("Safety review could not be attached to this draft because of a backend error. Please retry later.");
+  }
   let frames: number[] | undefined;
   if (challenge.image_id) {
     const { data: image, error: imageError } = await admin.from("challenge_images").select("media_format,selected_frames").eq("id",challenge.image_id).single();

@@ -4,8 +4,8 @@ import ChallengeDemo from "./demo";
 
 export function ReturnVisits({ draft, recent, error }: ReturnData) {
   return <aside className="return-visits" aria-label="Pick up where you left off">
-    {draft && <section><h2>Continue your challenge</h2><p className="muted">{draft.status === "ready" ? "Your matchup is ready to review and publish." : draft.status === "generating" ? "Check on your AI opponent’s generation." : "Your saved draft is waiting for you."}</p><Link className="button" href={`/challenges/${draft.id}`}>Resume your draft</Link></section>}
-    {recent.length > 0 && <section><h2>Your recent results</h2><p className="muted">Closed rounds you created or voted in.</p><ul>{recent.map(round => <li key={round.id}><Link href={`/challenges/${round.id}`}>{round.joke_context || "See the reveal"} →</Link><time dateTime={round.closes_at}>Closed {new Date(round.closes_at).toUTCString()}</time></li>)}</ul></section>}
+    {draft && <Link href={`/challenges/${draft.id}`}>Resume your draft →</Link>}
+    {recent.length > 0 && <Link href="/challenges?view=results">Recent results →</Link>}
     {error && <p role="alert">Some of your recent activity couldn’t be loaded. You can still browse challenges or open Yours.</p>}
   </aside>;
 }

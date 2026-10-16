@@ -16,7 +16,8 @@ Use [local E2E](e2e.md) for disposable accounts/content and migration replay.
   Apply before deploying code that depends on them, and verify expected grants,
   RLS, functions and relevant flows afterward.
 - The editor requires `20261015003108_editable_challenge_drafts.sql`. Creation steps
-  and arrival/return UI add no migrations of their own.
+  and arrival/return UI add no migrations of their own. Draft cancellation requires
+  `20261015203344_cancel_challenge_drafts.sql` before deploying its UI.
 - October 10 [maintenance](database-maintenance-2026-10-10.md) records the last hosted
   audit documented here, including known original-images schema differences. The
   editor was verified locally during implementation; this audit does not establish
@@ -67,3 +68,24 @@ share authorization codes or sessions when investigating redirects.
 Local mock tests establish application behavior, not real model quality, provider
 quotas, OAuth configuration or hosted latency. Record those checks with date and
 commit rather than turning a past success into a permanent deployment claim.
+
+## Action failures and login diagnostics
+
+Server Actions may return HTTP 200 carrying an error result. Monitor structured
+`app-operation` entries by `operation` and `outcome`, not HTTP status alone.
+`failed` is error level; expected claim conflicts/limits are `rejected` at info
+level. Logs never include prompts, raw provider messages, tokens, or callback URLs.
+`PGRST202` on generation.claim indicates a missing/mismatched function or stale
+PostgREST schema cache; verify migration/schema before retrying generation.
+
+OAuth logs distinguish auth.exchange, auth.profile, and auth.callback failures.
+The callback requires successful cookie writes and keeps auth-return on exchange
+failure. A successful local password-login E2E is not verification of Google OAuth.
+Retest a fresh production Google login after deployment and inspect the new logs
+if it still requires a second attempt.
+
+Redirect entries must include `https://` and the complete callback path. For this
+project, preview names follow `thp-fall-2026-<deployment>-col7.vercel.app`; exact
+URLs are preferred. Do not switch origin mid-login: PKCE cookies belong to the
+origin that initiated it. Correct production callback configuration does not
+prove preview configuration or session handoff works.

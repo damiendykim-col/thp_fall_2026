@@ -8,7 +8,7 @@ test("blocked text and unavailable checks leave an editable form and never creat
   await page.getByLabel("Image source", { exact: true }).selectOption("template");
   const { data: images } = await owner.client.from("images").select("id").limit(1);
   await page.getByLabel("Gallery template", { exact: true }).selectOption(images![0].id);
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await page.getByLabel("Image description", { exact: true }).fill("A surprised cartoon character.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByRole("button", { name: "2. Your caption" }).click();
@@ -88,7 +88,7 @@ test("template visual review is moderator-only and can be completed from the que
   await page.goto("/challenges/new");
   await page.getByLabel("Image source", { exact: true }).selectOption("template");
   await page.getByLabel("Gallery template", { exact: true }).selectOption(id);
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await page.getByLabel("Image description", { exact: true }).fill("A scene.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByRole("button", { name: "2. Your caption" }).click();

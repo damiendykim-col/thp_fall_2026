@@ -16,7 +16,7 @@ test("GIF selection is saved, used by generation and gated by independent modera
   await page.getByRole("button",{name:"Replace selected frame",exact:true}).click();
   await page.getByRole("button",{name:"Use these frames",exact:true}).click();
   await expect(page.getByRole("button",{name:"Frames confirmed",exact:true})).toBeVisible();
-  await page.getByText("Review image understanding",{exact:true}).click();
+
   await expect(page.getByLabel("Image description",{exact:true})).toHaveValue("A yellow square fills the image.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByRole("button", { name: "2. Your caption" }).click();

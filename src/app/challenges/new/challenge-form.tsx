@@ -217,7 +217,7 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
       {draftNotice && <p role="status">{draftNotice}</p>}
       <div className="creation-stage" hidden={!editing && step !== 1}>
       <p className="muted">Choose an image you have permission to share, then confirm what the AI sees.</p>
-      <p className="muted">When you select an upload, its image is sent to Google Gemini to suggest a description. Review it before continuing, or write your own if generation fails. Google’s free API tier may use submitted content to improve its products.</p>
+      <p className="muted">Uploads are sent to Google Gemini for description and safety checks. Its free tier may use content to improve Google products.</p>
       <label>Image source
         <select aria-label="Image source" value={source} disabled={pending} onChange={e => { resetReview(); selectedFile.current = null; setPreview(""); setTemplate(""); setSource(e.target.value); }}>
           <option value="upload">Upload an image</option><option value="template">Gallery template</option>
@@ -226,7 +226,7 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
       {source === "upload" ? (
         <label>Challenge image
           <input ref={fileInput} aria-label="Challenge image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={pending} onChange={e => selectFile(e.target.files?.[0] ?? null)} />
-          <span className="muted">JPEG, PNG, WebP or GIF, up to 3 MB. GIFs: up to 120 frames and 30 seconds; moderator review required before publication.</span>
+          <span className="muted">JPEG, PNG, WebP or GIF · up to 3 MB. GIFs require moderator approval.</span>
         </label>
       ) : (
         <label>Gallery template
@@ -253,7 +253,7 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
       <input type="hidden" name="imageId" value={source === "upload" ? imageId : ""} />
       <input type="hidden" name="submission" value={submission} />
       <input type="hidden" name="manual" value={String(manual)} />
-      <details className="image-understanding">
+      <details className="image-understanding" open={ready && !imageStatus}>
         <summary><span>Review image understanding</span><span className="review-status">{!ready ? "Choose an image first" : imageStatus ? "Analyzing…" : confirmed ? "Confirmed" : "Confirmation needed"}</span></summary>
         <div className="image-understanding-fields">
           <p className="muted">This description helps the AI understand the scene. Check it once, then focus on your joke.</p>
@@ -271,7 +271,7 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
           </label>
         </div>
       </details>
-      {ready && !confirmed && !imageStatus && <p className="field-help">Open “Review image understanding” above and confirm the scene to continue.</p>}
+      {ready && !confirmed && !imageStatus && <p className="field-help">Confirm the description above to continue.</p>}
       {!editing && <button type="button" className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed} onClick={() => changeStep(2)}>Continue to caption</button>}
       </div>
       <div className="creation-stage" hidden={!editing && step !== 2}>
@@ -287,13 +287,13 @@ function AccountChallengeForm({ userId, templates, editing }: FormProps) {
       <label>Add context for the joke (optional)
         <textarea name="context" disabled={pending} value={context} onChange={e => setContext(e.target.value)} maxLength={500} placeholder="For example: finding out the assignment was a group project." />
       </label>
-      <p className="muted">The confirmed description and optional joke context accompany the image when generating your opponent. Your caption is sent separately to Gemini for safety checking, but never to the opponent-caption generator.</p>
-      <p className="muted">Dark humor and satire are welcome; targeted abuse and harmful content are not. Your draft must pass safety checks. Next, generate your AI opponent and review both captions before publishing.</p>
+      <p className="muted">Your opponent sees the image and context—not your caption. Both captions get a safety check.</p>
+      <details><summary>Content and AI details</summary><p>Dark humor and satire are welcome; targeted abuse and harmful content are not. Your caption is sent separately to Gemini for safety checking. GIFs are sampled for AI understanding and limited to 120 frames and 30 seconds; a moderator reviews the full animation before publication.</p></details>
       {state.error && <p role="alert">{state.error}</p>}
       {!editing && (!ready || !confirmed || Boolean(imageStatus)) && <p role="status">Finish image review in step 1 before creating your draft. Your caption will be kept.</p>}
       <button className="button button-primary" disabled={pending || Boolean(imageStatus) || !ready || !confirmed || !caption.trim()}>{pending ? "Saving…" : editing ? "Save changes" : "Create draft"}</button>
       </div>
-      <p className="muted">Unfinished text and saved image references are kept in this browser tab until you save, discard them, or sign out. Local files must be selected again.</p>
+      <p className="muted">Draft text is saved in this tab. Unsaved files must be selected again.</p>
       <button className="button" type="button" disabled={pending || Boolean(imageStatus)} onClick={discard}>{editing ? "Discard edits" : "Discard unfinished challenge"}</button>
     </form>
   );

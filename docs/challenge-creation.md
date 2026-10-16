@@ -5,7 +5,7 @@ Release 3 — October 14, 2026.
 ## User flow
 
 1. **Image:** upload or choose a template; confirm GIF frames when applicable, then
-   review the description. The provider disclosure stays before the upload control.
+   review the description in an automatically expanded section. The provider disclosure stays before the upload control.
    **Continue to caption** requires completed image review and explicit confirmation.
 2. **Your caption:** write the contender alongside a small image preview; optionally
    supply context. The caption is checked for safety but never given to the opponent
@@ -41,3 +41,11 @@ and publication; component coverage checks navigation and confirmation invalidat
 The implemented fourth release addresses [arrival and return visits](arrival-and-return.md),
 including empty home/results states. Taste/persona work and the member graph remain
 separate from this UX sequence.
+
+## Cancelling a saved draft
+
+Owners can cancel any unpublished draft, including rejected or generating drafts,
+with explicit confirmation. Cancellation retains the private audit and generation
+quota history, ends running claims, and prevents late completions, publication,
+and resumption. It does not delete shared images. Published rounds use Hide challenge.
+Requires `20261015203344_cancel_challenge_drafts.sql` before deploying the button.

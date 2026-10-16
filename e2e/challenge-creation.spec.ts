@@ -6,12 +6,12 @@ test("creation stages preserve work, require renewed image confirmation, and kee
   await page.goto("/challenges/new");
   await expect(page.getByLabel("Your caption")).toBeHidden();
   await expect(page.getByRole("button", { name: "Continue to caption" })).toBeDisabled();
-  await expect(page.getByText(/Google’s free API tier/)).toBeVisible();
+  await expect(page.getByText(/free tier may use content/)).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("image-desktop.png"), fullPage: true });
   await page.getByLabel("Image source").selectOption("template");
   const option = await page.getByLabel("Gallery template").locator("option:not([disabled])").first().getAttribute("value");
   await page.getByLabel("Gallery template").selectOption(option!);
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await page.getByLabel("I confirm this image description").check();
   await page.getByRole("button", { name: "Continue to caption" }).click();
   await expect(page.getByRole("heading", { name: "Write your contender" })).toBeFocused();

@@ -15,8 +15,8 @@ const rows = [
 function setup(votes = [{ challenge_id: "voted" }], voteError: object | null = null, challenges = rows) {
   const from = jest.fn((table: string) => {
     const result = table === "challenges" ? { data: challenges, error: null } : { data: votes, error: voteError };
-    const chain = { ...result, select: jest.fn(), eq: jest.fn(), is: jest.fn(), gt: jest.fn(), order: jest.fn(), limit: jest.fn(), in: jest.fn() };
-    for (const method of [chain.select, chain.eq, chain.is, chain.gt, chain.order, chain.limit, chain.in]) method.mockReturnValue(chain);
+    const chain = { ...result, select: jest.fn(), eq: jest.fn(), is: jest.fn(), or: jest.fn(), gt: jest.fn(), order: jest.fn(), limit: jest.fn(), in: jest.fn() };
+    for (const method of [chain.select, chain.eq, chain.is, chain.or, chain.gt, chain.order, chain.limit, chain.in]) method.mockReturnValue(chain);
     return chain;
   });
   jest.mocked(createAuthClient).mockResolvedValue({ auth: { getUser: async () => ({ data: { user: { id: "viewer" } }, error: null }) }, from } as never);

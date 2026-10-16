@@ -9,10 +9,13 @@ Release 4 — October 15, 2026.
 - An empty signed-in Open feed offers the latest saved draft to resume, or a new
   challenge to start. A collapsible, explicitly labeled example remains available.
   Empty Results no longer sends people around an Open/Results loop.
-- Open shows a compact return section: one recent unfinished challenge and up to
-  three closed rounds the user created or currently has a vote in. These are
-  **recent results**, not unread/new notifications. Undoing a vote removes that
-  association; there is no invented voting history.
+- Open shows compact links to resume a draft and visit Results when recent personal
+  results exist. Individual result summaries stay on Results, keeping challenges
+  above the fold. These are not unread/new notifications. Undoing a vote removes
+  that association; there is no invented voting history.
+- Signed-in members see a compact heading and Challenge AI action. The signed-out
+  demo allows editing an illustrative contender and revealing demo roles; it makes
+  no provider requests and records no votes.
 - If every displayed open round is already voted on or belongs to the viewer,
   acknowledge it while keeping all cards available. Own-only rounds say they are
   awaiting community votes. At the existing 50-card limit, wording refers only to

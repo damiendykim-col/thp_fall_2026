@@ -39,7 +39,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
     }
   } else {
     let query = supabase.from('challenges').select('id,creator_id,situation,joke_context,image_description,image_path,template_url,status,closes_at,hidden_at').order('created_at', { ascending: false }).limit(50);
-    query = selected === 'yours' ? query.eq('creator_id', user.id) : query.eq('status', 'published').is('hidden_at', null).gt('closes_at', new Date().toISOString());
+    query = selected === 'yours' ? query.eq('creator_id', user.id).or('hidden_at.is.null,status.eq.published') : query.eq('status', 'published').is('hidden_at', null).gt('closes_at', new Date().toISOString());
     const { data, error } = await query;
     // Read only this viewer's ballots; no counts or caption attribution leave the database.
     const { data: votes, error: voteError } = data?.length && selected === 'open'
@@ -79,7 +79,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
   }
   return <><a className="skip-link" href="#challenges">Skip to challenges</a><SiteHeader />
     <main className="page-shell challenge-home" id="challenges">
-      <div className="challenge-hero"><span className="eyebrow">One image. You versus AI.</span><h1>{user ? 'Let the captions compete.' : 'Can you out-caption AI?'}</h1><p>Pick the funnier caption. Find out who wrote it when the round ends.</p></div>
+      {user ? <div className="challenge-heading"><h1>Caption challenges</h1><Link className="button button-primary" href="/challenges/new">Challenge AI</Link></div> : <div className="challenge-hero"><span className="eyebrow">Your wit. An AI opponent. The crowd decides.</span><h1>Can you out-joke AI?</h1><p>Upload an image, write your best caption, and let the community pick a winner.</p><Link className="button button-primary" href="/login?next=%2Fchallenges%2Fnew">Challenge AI</Link></div>}
       {user && <nav className="challenge-tabs" aria-label="Challenge filters">{tabs.map(tab => <Link key={tab.value} href={`/challenges?view=${tab.value}`} aria-current={selected === tab.value ? 'page' : undefined}>{tab.label}</Link>)}</nav>}
       {activity && <ReturnVisits {...activity} />}
       {content}

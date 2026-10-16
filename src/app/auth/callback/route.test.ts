@@ -35,3 +35,20 @@ it.each(['/challenges/new', '/challenges/12345678-1234-1234-1234-123456789abc', 
   const response = await GET(new Request('https://example.com/auth/callback?code=abc'));
   expect(response.headers.get('location')).toBe(`https://example.com${value.startsWith('//') ? '/challenges' : value}`);
 });
+it('reports the exchange failure code without logging the OAuth code or provider message', async () => {
+  const log = jest.spyOn(console, 'error').mockImplementation(() => {});
+  createClient.mockResolvedValue({ auth: { exchangeCodeForSession: async () => ({ data: {}, error: { code: 'bad_code_verifier', message: 'private details' } }) } } as unknown as Awaited<ReturnType<typeof createAuthClient>>);
+  await GET(new Request('https://example.com/auth/callback?code=secret-code'));
+  expect(createClient).toHaveBeenCalledWith({ writableCookies: true });
+  expect(log).toHaveBeenCalledWith({ event: 'app-operation', operation: 'auth.exchange', outcome: 'failed', code: 'bad_code_verifier' });
+  expect(JSON.stringify(log.mock.calls)).not.toMatch(/secret-code|private details/);
+  log.mockRestore();
+});
+it('shows a recoverable error when the callback cannot persist cookies', async () => {
+  const log = jest.spyOn(console, 'error').mockImplementation(() => {});
+  createClient.mockRejectedValueOnce(new Error('Private cookie details'));
+  const response = await GET(new Request('https://example.com/auth/callback?code=abc'));
+  expect(response.headers.get('location')).toBe('https://example.com/auth/error');
+  expect(log).toHaveBeenCalledWith({ event: 'app-operation', operation: 'auth.callback', outcome: 'failed' });
+  log.mockRestore();
+});

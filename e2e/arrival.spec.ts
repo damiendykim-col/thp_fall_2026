@@ -60,8 +60,8 @@ test("voting catches up without removing cards; closing surfaces only personal r
   expect((await accounts.admin.from("challenges").update({ closes_at: "2026-01-01T00:00:00Z" }).in("id", [ids.human, ids.tie])).error).toBeNull();
   await page.goto("/");
   const activity = page.getByRole("complementary", { name: "Pick up where you left off" });
-  await expect(activity.getByRole("heading", { name: "Your recent results" })).toBeVisible();
-  await expect(activity.getByRole("link")).toHaveCount(2);
+  await expect(activity.getByRole("link", { name: "Recent results →" })).toBeVisible();
+  await expect(activity.getByRole("link")).toHaveCount(1);
   await expect(activity.getByRole("alert")).toHaveCount(0);
   await expect(activity.locator(`a[href="/challenges/${ids.hidden}"]`)).toHaveCount(0);
   await expect(activity.locator(`a[href="/challenges/${ids.unrelated}"]`)).toHaveCount(0);

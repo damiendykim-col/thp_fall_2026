@@ -18,7 +18,7 @@ Members remains separate and outside primary navigation.
 - Profile editing, avatar history, and member discovery without names/emails.
 - The four-part UX review is implemented: upload/retry recovery; revision-safe
   unpublished draft editing; three-stage creation; improved arrival/return visits.
-- Home offers draft resumption and recent results. Open cards identify ownership
+- Home offers compact draft-resumption and Results links; challenge cards take priority over activity summaries. Open cards identify ownership
   and existing votes. Results includes ties and no-vote rounds, 12 per page.
 - Local Auth/database/Storage E2E coverage and required unit/E2E GitHub checks.
 

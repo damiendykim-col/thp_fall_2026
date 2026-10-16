@@ -16,8 +16,8 @@ test("empty open feed prioritizes resuming a saved draft", () => {
 });
 test("return visits link only the supplied recent rounds without inventing unread state", () => {
   render(<ReturnVisits recent={[{ id: "r1", closes_at: "2026-01-01T00:00:00Z", joke_context: null }]} draft={null} error={false} />);
-  expect(screen.getByRole("heading", { name: "Your recent results" })).toBeVisible();
-  expect(screen.getByRole("link", { name: /See the reveal/ })).toHaveAttribute("href", "/challenges/r1");
+  expect(screen.queryByRole("heading", { name: "Your recent results" })).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /Recent results/ })).toHaveAttribute("href", "/challenges?view=results");
   expect(screen.queryByText(/new results/i)).not.toBeInTheDocument();
 });
 test.each([[0, 0, "No votes this round"], [1, 1, "It’s a tie"], [2, 1, "Human caption wins"], [1, 2, "AI caption wins"]])("results show %s:%s as %s", (human, ai, label) => {

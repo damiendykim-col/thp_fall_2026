@@ -61,7 +61,7 @@ test("creator can edit a populated draft, keep AI for caption edits, and regener
   await page.getByLabel("Image source").selectOption("template");
   const option = await page.getByLabel("Gallery template").locator("option:not([disabled])").first().getAttribute("value");
   await page.getByLabel("Gallery template").selectOption(option!);
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await page.getByLabel("I confirm this image description").check();
   await page.getByRole("button", { name: "2. Your caption" }).click();
   await page.getByLabel("Your caption").fill("My original joke");
@@ -94,7 +94,7 @@ test("creator can edit a populated draft, keep AI for caption edits, and regener
   await page.getByLabel("Image source").selectOption("upload");
   const png = await sharp({ create: { width: 16, height: 16, channels: 3, background: "yellow" } }).png().toBuffer();
   await page.getByLabel("Challenge image").setInputFiles({ name: "replacement.png", mimeType: "image/png", buffer: png });
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByRole("button", { name: "Save changes", exact: true }).click();

@@ -1,4 +1,5 @@
 "use server";
+import { logOperation } from "@/lib/operation-log";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { challengeAdmin } from "@/lib/challenges/server";
@@ -110,12 +111,13 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
     const { data, error: claimError } = await admin.rpc("claim_reviewed_caption_generation", { p_owner: user.id, p_challenge: id, p_revision: revision, p_provider: config.provider, p_model: config.model, p_prompt: prompt });
     if (claimError) {
       // Log the operation and SQLSTATE only, never prompts or provider payloads.
-      console.error("claim_reviewed_caption_generation failed", { code: claimError.code });
+      logOperation("generation.claim", ["40001", "P0001"].includes(claimError.code) ? "rejected" : "failed", claimError);
       return { error: claimError.code === "40001"
         ? "This draft changed. Reload before generating its AI opponent." : claimError.code === "P0001"
         ? "Generation is already running, complete, or at its limit. Interrupted requests can be retried after two minutes."
         : "Generation could not start because of a backend error. Please try again later." };
     }
+    logOperation("generation.claim", "succeeded");
     request = data;
     const caption = await generateCaption(config, prompt, bytes);
     const aiCheck = await ensureModerated(user.id, "ai", humanReviewText(
@@ -124,14 +126,27 @@ export async function generateOpponent(id: string): Promise<ChallengeResult> {
     ), bytes);
     const { error: saveError } = await admin.rpc("finish_caption_generation", { p_request: request, p_caption: caption });
     if (saveError) {
-      console.error("finish_caption_generation failed", { code: saveError.code });
+      logOperation("generation.save", "failed", saveError);
       throw new Error("The caption could not be saved. Please retry.");
     }
-    const { error: approvalError } = await admin.from("challenges").update({ ai_moderation_id: aiCheck }).eq("id", id).eq("creator_id", user.id).eq("revision", revision!);
+    // Completion can intentionally be a no-op after cancellation or a superseded claim.
+    const { data: completed, error: completionError } = await admin.from("challenge_generations")
+      .select("status").eq("id", request!).single();
+    if (completionError) {
+      logOperation("generation.verify", "failed", completionError);
+      throw new Error("The generation result could not be verified. Reload this draft before retrying.");
+    }
+    if (completed?.status !== "succeeded") throw new ModerationError("This generation was cancelled or superseded. Reload the draft.", "rejected");
+    const { data: attached, error: approvalError } = await admin.from("challenges").update({ ai_moderation_id: aiCheck })
+      .eq("id", id).eq("creator_id", user.id).eq("revision", revision!).eq("status", "ready")
+      .is("hidden_at", null).select("id").maybeSingle();
     if (approvalError) throw new Error("The safety result could not be saved. Please retry publication.");
+    if (!attached) throw new ModerationError("This draft changed or was cancelled. Reload before continuing.", "rejected");
+    logOperation("generation.complete", "succeeded");
     revalidatePath(`/challenges/${id}`);
     return {};
   } catch (e) {
+    logOperation("generation.complete", e instanceof ModerationError ? e.outcome : "failed", e);
     if (request) await challengeAdmin().rpc("finish_caption_generation", { p_request: request, p_caption: null });
     revalidatePath(`/challenges/${id}`);
     return { error: e instanceof Error && e.name !== "TimeoutError" ? e.message : "Generation timed out. Please retry." };

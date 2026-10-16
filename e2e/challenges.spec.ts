@@ -10,7 +10,7 @@ test("upload, generate, publish, blind voting, undo, switch and timed reveal", a
   // Exercise the exact file limit through multipart Server Actions, not only the decoder.
   const boundaryImage = Buffer.concat([image, Buffer.alloc(3 * 1024 * 1024 - image.length)]);
   await page.getByLabel("Challenge image").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: boundaryImage });
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
   await expect(page.getByRole("button", { name: "Continue to caption" })).toBeDisabled();
   await page.getByLabel("I confirm this image description").check();
@@ -151,7 +151,7 @@ test("image review preserves the AI original, supports edits/replacement and reu
   for (const mode of ["edited", "replaced"]) {
     await page.goto("/challenges/new");
     await page.getByLabel("Challenge image").setInputFiles({ name: "review.png", mimeType: "image/png", buffer });
-    await page.getByText("Review image understanding", { exact: true }).click();
+
     await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
     await page.getByLabel("I confirm this image description").check();
     if (mode === "replaced") await page.getByRole("button", { name: "Write my own description" }).click();
@@ -186,7 +186,7 @@ test("template descriptions need confirmation and review RPCs enforce identity a
   await page.getByLabel("Image source").selectOption("template");
   const { data: templates } = await owner.client.from("images").select("id").limit(1);
   await page.getByLabel("Gallery template").selectOption(templates![0].id);
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await page.getByLabel("Image description", { exact: true }).fill("A template's visible scene.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByRole("button", { name: "2. Your caption" }).click();
@@ -228,7 +228,7 @@ test("an image with failed analysis can be manually described and used without a
   await page.goto("/challenges/new");
   await page.getByLabel("Challenge image").setInputFiles({ name: "manual.png", mimeType: "image/png", buffer: input });
   await expect(page.getByText("A description could not be suggested. Write your own to continue.")).toBeVisible();
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await page.getByLabel("Image description", { exact: true }).fill("A yellow square.");
   await page.getByLabel("I confirm this image description").check();
   await page.getByRole("button", { name: "2. Your caption" }).click();

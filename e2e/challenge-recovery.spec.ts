@@ -7,7 +7,7 @@ test("an uploaded challenge restores after navigation and clears after creation"
   await page.goto("/challenges/new");
   const bytes = await sharp({ create: { width: 16, height: 16, channels: 3, background: "yellow" } }).png().toBuffer();
   await page.getByLabel("Challenge image").setInputFiles({ name: "test.png", mimeType: "image/png", buffer: bytes });
-  await page.getByText("Review image understanding", { exact: true }).click();
+
   await expect(page.getByLabel("Image description", { exact: true })).toHaveValue("A yellow square fills the image.");
   await page.getByLabel("Image description", { exact: true }).fill("A bright yellow square.");
   await page.getByLabel("I confirm this image description").check();

@@ -61,15 +61,14 @@ test("an interrupted request can retry the selected image without reopening the 
   expect(uploadChallengeImage).toHaveBeenCalledTimes(1);
 });
 
-test("image understanding is collapsed with a clear review status while joke writing has its own stage", async () => {
+test("image understanding opens automatically when confirmation is needed", async () => {
   render(<ChallengeForm userId="user-1" templates={[]} />);
   upload();
   await waitFor(() => expect(screen.getByLabelText("Image description")).toHaveValue("A yellow square."));
   const review = screen.getByText("Review image understanding").closest("details")!;
-  expect(review).not.toHaveAttribute("open");
+  expect(review).toHaveAttribute("open");
   expect(screen.getByText("Confirmation needed")).toBeVisible();
   expect(screen.getByLabelText("Add context for the joke (optional)")).not.toBeVisible();
-  fireEvent.click(screen.getByText("Review image understanding"));
   fireEvent.click(screen.getByLabelText("I confirm this image description"));
   expect(screen.getByText("Confirmed")).toBeVisible();
   fireEvent.change(screen.getByLabelText("Image description"), { target: { value: "A changed scene." } });

@@ -297,3 +297,21 @@ ol.creation-progress { padding: 0; }
 .round-result .winner-content { display: grid; gap: 1rem; }
 
 .return-visits section, .round-result { min-width: 0; overflow-wrap: anywhere; }
+
+/* Keep the game ahead of account/activity summaries. */
+.challenge-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.challenge-heading h1 { font-size: clamp(1.4rem, 3vw, 2rem); }
+.return-visits { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; font-size: .9rem; }
+.return-visits p { margin: 0; }
+.caught-up { padding: .7rem 0; border: 0; background: none; margin-bottom: 1rem; }
+.caught-up h2 { font-size: .95rem; margin-bottom: .25rem; }
+.caught-up p { font-size: .9rem; margin-bottom: .25rem; }
+.challenge-hero .button { margin-top: 1rem; }
+@media (max-width: 600px) {
+  .challenge-home { padding-top: 1rem; }
+  .challenge-hero { margin-bottom: 1.25rem; }
+}
+.demo-content label { display: grid; gap: .5rem; margin: 1rem 0; }
+.demo-content input { width: 100%; min-width: 0; padding: .75rem; border: 1px solid var(--border); border-radius: .4rem; background: #151515; color: inherit; }
+.demo-content input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.draft-cancellation { margin-top: 1.5rem; }

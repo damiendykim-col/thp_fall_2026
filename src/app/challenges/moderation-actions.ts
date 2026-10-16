@@ -34,3 +34,12 @@ export async function reviewGif(id: string, approved: boolean): Promise<Challeng
   revalidatePath("/moderation"); revalidatePath("/challenges", "layout");
   return error ? { error: "GIF review could not be saved." } : {};
 }
+
+export async function cancelDraft(id: string): Promise<ChallengeResult> {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.rpc("cancel_caption_draft", { p_challenge: id });
+  if (error) return { error: "The draft could not be cancelled. Please retry." };
+  revalidatePath("/challenges", "layout");
+  revalidatePath("/");
+  return {};
+}

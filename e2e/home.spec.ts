@@ -1,14 +1,21 @@
 import { test, expect } from './fixtures';
 
-test('signed-out home demonstrates the challenge and keeps account and legacy sections out of navigation', async ({ page }) => {
+test('signed-out home demonstrates the challenge and keeps account and legacy sections out of navigation', async ({ page }, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Can you out-caption AI?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Can you out-joke AI?' })).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
   await expect(nav.getByRole('link', { name: /Images|Members|Profile/ })).toHaveCount(0);
   const example = page.getByRole('region', { name: 'Example challenge' });
+  await example.getByLabel('Try your own caption').fill('I put the I in team.');
   const caption = example.getByRole('button').first();
   await caption.click();
   await expect(caption).toHaveAttribute('aria-pressed', 'true');
+  await example.getByRole('button', { name: 'Reveal demo roles' }).click();
+  await expect(example.getByText('Example AI opponent')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('home-desktop.png'), fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('home-mobile.png'), fullPage: true });
   await caption.click();
   await expect(caption).toHaveAttribute('aria-pressed', 'false');
   await page.setViewportSize({ width: 390, height: 844 });
