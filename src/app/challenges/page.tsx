@@ -1,4 +1,8 @@
 import Link from "next/link";
+import ChallengeWorkspace from "./workspace";
+import ChallengeForm from "./new/challenge-form";
+import { getImages } from "@/lib/images";
+export const maxDuration = 120;
 import SiteHeader from "@/components/site-header";
 import { createAuthClient } from "@/lib/supabase/server";
 import { getReturnVisits, getRoundResults, resultsPage, type ReturnData } from "@/lib/challenges/arrival";
@@ -25,14 +29,14 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
     : null;
   let activity: ReturnData | null = null;
   let content;
-  let contentHasCreateAction = false;
+
   if (!user) content = <GuestExperience signIn={<><SignIn destination="/challenges/new" />{isTestAuthEnabled() && <TestSignIn destination="/challenges/new" />}</>} />;
   else if (selected === 'results') {
     const result = await getRoundResults(supabase, page).catch(() => null);
     if (!result) content = <p role="alert">Results couldn’t be loaded. Please refresh to try again.</p>;
     else {
       const { rounds, more } = result;
-      contentHasCreateAction = !rounds.length && page === 1;
+
       content = <>
         {rounds.length ? <><h2>Finished rounds</h2><p className="muted">Every outcome: wins, ties, and rounds without votes.</p><RoundResults rounds={rounds} /></>
           : page === 1 ? <ArrivalEmpty results /> : <p>No rounds on this page. Return to the previous page for recent results.</p>}
@@ -58,13 +62,11 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
     const urls = paths.length ? (await supabase.storage.from('challenge-images').createSignedUrls(paths, 3600)).data : [];
     const signed = new Map((urls ?? []).flatMap(item => item.path && item.signedUrl && !item.error ? [[item.path, item.signedUrl]] : []));
     activity = await activityPromise;
-    contentHasCreateAction = !error && !voteError && (!data?.length ||
-      (selected === 'open' && cards!.every(c => c.creator_id === user.id || voted.has(c.id))));
     content = error || voteError ? <p role="alert">Challenges couldn’t be loaded. Please refresh to try again.</p> : !data?.length ? <ArrivalEmpty draft={activity?.draft} yours={selected === 'yours'} /> : <>
       {selected === 'open' && cards!.every(c => c.creator_id === user.id || voted.has(c.id)) && <section className="caught-up" role="status">
         <h2>{cards!.every(c => c.creator_id === user.id) ? 'Your rounds are open.' : data.length === 50 ? 'You’ve voted on the available rounds shown here.' : 'You’re caught up.'}</h2>
         <p>{cards!.every(c => c.creator_id === user.id) ? 'Your challenges are waiting for the community’s votes.' : 'You can revisit your picks below and undo or switch a vote until closing.'}</p>
-        <Link href="/challenges/new">Start another challenge →</Link>
+        <Link href="/challenges?mode=create">Start another challenge →</Link>
       </section>}
       <ul className="challenge-feed">{cards!.map(c => {
       const own = c.creator_id === user.id;
@@ -84,12 +86,16 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
       </Link></li>;
     })}</ul>{data.length === 50 && <p className="muted">Showing the latest 50 challenges.</p>}</>;
   }
+  const browse = <>
+    <nav className="challenge-tabs" aria-label="Challenge filters">{tabs.map(tab => <Link key={tab.value} href={`/challenges?view=${tab.value}`} aria-current={selected === tab.value ? 'page' : undefined}>{tab.label}</Link>)}</nav>
+    {activity && <ReturnVisits {...activity} />}
+    {content}
+  </>;
+  const templates = user ? await getImages().catch(() => null) : null;
+  const create = user && templates ? <><h2>Create a challenge</h2><ChallengeForm userId={user.id} templates={templates} /></> : <p role="alert">Image templates couldn’t be loaded. Refresh to try again, or browse challenges.</p>;
   return <><a className="skip-link" href="#challenges">Skip to challenges</a><SiteHeader landing />
     <main className="page-shell challenge-home" id="challenges">
-      {user ? <div className="challenge-heading"><h1>Caption challenges</h1>{!contentHasCreateAction && <Link className="button button-primary" href="/challenges/new">Challenge AI</Link>}</div> : <div className="challenge-hero"><span className="eyebrow">Your wit. An AI opponent. The crowd decides.</span><h1>Can you out-joke AI?</h1><p>Upload an image, write your best caption, and let the community pick a winner.</p></div>}
-      {user && <nav className="challenge-tabs" aria-label="Challenge filters">{tabs.map(tab => <Link key={tab.value} href={`/challenges?view=${tab.value}`} aria-current={selected === tab.value ? 'page' : undefined}>{tab.label}</Link>)}</nav>}
-      {activity && <ReturnVisits {...activity} />}
-      {content}
+      {user ? <><h1>Caption challenges</h1><ChallengeWorkspace key={user.id} create={create} browse={browse} /></> : <><div className="challenge-hero"><span className="eyebrow">Your wit. An AI opponent. The crowd decides.</span><h1>Can you out-joke AI?</h1><p>Upload an image, write your best caption, and let the community pick a winner.</p></div>{content}</>}
     </main>
   </>;
 }

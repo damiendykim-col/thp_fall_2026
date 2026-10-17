@@ -58,7 +58,7 @@ test('sign-in to create survives onboarding and account controls stay accessible
   await page.getByRole('textbox', { name: 'Last name', exact: true }).fill('Person');
   await page.getByRole('button', { name: 'Save profile', exact: true }).click();
   await page.getByRole('link', { name: 'Continue to challenges' }).click();
-  await expect(page).toHaveURL(/\/challenges\/new$/);
+  await expect(page).toHaveURL(/\/challenges\?mode=create$/);
   await page.getByText('Account', { exact: true }).click();
   await expect(page.getByRole('link', { name: 'Profile', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Moderation', exact: true })).toHaveCount(0);

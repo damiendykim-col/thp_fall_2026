@@ -10,7 +10,7 @@ test("a new account has one creation action, and a saved draft becomes a return 
   await expect(page.getByRole("link", { name: "Start a challenge", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore results" })).toHaveCount(0);
   await expect(page.getByText("Try an example · no votes recorded", { exact: true })).toHaveCount(0);
-  await expect(page.locator('a[href="/challenges/new"]')).toHaveCount(1);
+  await expect(page.locator('a[href="/challenges?mode=create"]')).toHaveCount(1);
   const { data: draft, error } = await accounts.admin.from("challenges").insert({ ...template, creator_id: owner.id, situation: "My unfinished scene", status: "draft" }).select("id").single();
   expect(error).toBeNull();
   await page.reload();

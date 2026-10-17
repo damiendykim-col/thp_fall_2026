@@ -3,6 +3,9 @@ import ChallengesPage from "./page";
 import { createAuthClient } from "@/lib/supabase/server";
 
 jest.mock("@/lib/supabase/server", () => ({ createAuthClient: jest.fn() }));
+jest.mock("./workspace", () => ({ __esModule: true, default: ({ browse }: { browse: React.ReactNode }) => browse }));
+jest.mock("./new/challenge-form", () => ({ __esModule: true, default: () => null }));
+jest.mock("@/lib/images", () => ({ getImages: async () => [] }));
 jest.mock("@/components/site-header", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/lib/challenges/arrival", () => ({ getReturnVisits: jest.fn(async () => ({ draft: null, error: false })), resultsPage: () => 1 }));
 

@@ -20,7 +20,13 @@ Updated October 16, 2026.
 - Open shows compact links to resume the three most recent saved drafts. Results
   are accessed through the Results tab, without a duplicate activity shortcut.
   No activity panel is rendered when there are no saved drafts or loading errors.
-- Signed-in members see a compact heading and Challenge AI action. The signed-out
+- Signed-in members share a Create / Browse workspace. Ordinary sign-in and existing
+  creation links open Create at `/challenges?mode=create`; explicit challenge links
+  retain their destinations. Challenges navigation returns to Browse.
+  Both panels stay mounted while switching, preserving the selected file, caption,
+  current step and in-flight work. Browse keeps Open / Results / Yours.
+  Browser history records panel changes. The old `/challenges/new` route redirects
+  to Create after authentication. The signed-out
   practice round offers two predefined images and matching prepared captions; it makes
   no provider requests and records no votes.
 - If every displayed open round is already voted on or belongs to the viewer,

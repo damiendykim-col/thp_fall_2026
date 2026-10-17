@@ -9,7 +9,7 @@ import { measureOperation } from "@/lib/performance";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = (await searchParams).next;
-  const destination = authDestination(next);
+  const destination = next ? authDestination(next) : "/challenges/new";
   const supabase = await createAuthClient();
   const { data: { user } } = await measureOperation("login.auth", () => supabase.auth.getUser());
   if (user) redirect(destination);

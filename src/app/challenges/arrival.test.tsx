@@ -5,7 +5,7 @@ import type { Challenge } from "@/lib/challenges/types";
 const round: Challenge & { imageUrl: string | null } = { id: "r1", own: false, status: "published", situation: "A scene", image_path: null, template_url: null, closes_at: "2026-01-01T00:00:00Z", closed: true, vote: null, imageUrl: null, captions: [{ id: "h", body: "Human line", origin: "human", votes: 0 }, { id: "a", body: "AI line", origin: "ai", votes: 0 }] };
 test("a signed-in empty feed offers creation without a practice walkthrough", () => {
   render(<ArrivalEmpty />);
-  expect(screen.getByRole("link", { name: "Start a challenge" })).toHaveAttribute("href", "/challenges/new");
+  expect(screen.getByRole("link", { name: "Start a challenge" })).toHaveAttribute("href", "/challenges?mode=create");
   expect(screen.queryByRole("link", { name: "Explore results" })).not.toBeInTheDocument();
   expect(screen.queryByText(/Try an example/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Sign in to vote/)).not.toBeInTheDocument();

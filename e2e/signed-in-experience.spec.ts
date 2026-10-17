@@ -19,7 +19,7 @@ test('several saved drafts stay available while other work is pending', async ({
   for (const id of ids) await expect(activity.locator(`a[href="/challenges/${id}"]`)).toBeVisible();
   await page.goto(`/challenges/${ids[0]}`);
   await page.getByRole('link', { name: 'Start another', exact: true }).click();
-  await expect(page).toHaveURL(/\/challenges\/new$/);
+  await expect(page).toHaveURL(/\/challenges\?mode=create$/);
   await page.getByLabel('Image source').selectOption('template');
   await page.getByLabel('Gallery template').selectOption(templates![0].id);
   await page.getByLabel('I confirm this image description').check();
@@ -67,4 +67,26 @@ test('next and previous navigate without voting and preserve an undoable ballot'
   await page.screenshot({ path: testInfo.outputPath('matchup-mobile.png'), fullPage: true });
   await page.getByRole('button', { name: 'Undo upvote' }).click();
   await expect(page.getByRole('button', { name: 'Upvote', exact: true })).toHaveCount(2);
+});
+
+test('create and browse share a workspace without losing the current creation step', async ({ page, accounts }) => {
+  const owner = await accounts.create();
+  const { data: templates } = await accounts.admin.from('images').select('id').limit(1);
+  await login(page, owner);
+  await page.goto('/challenges/new');
+  await expect(page.getByRole('button', { name: 'Create', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByLabel('Image source').selectOption('template');
+  await page.getByLabel('Gallery template').selectOption(templates![0].id);
+  await page.getByLabel('I confirm this image description').check();
+  await page.getByRole('button', { name: 'Continue to caption' }).click();
+  await page.getByLabel('Your caption', { exact: true }).fill('Keep this unfinished joke.');
+  await page.getByRole('button', { name: 'Browse', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Open', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Results', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Results', exact: true })).toHaveAttribute('aria-current', 'page');
+  await page.getByRole('button', { name: 'Create', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: 'Your caption', exact: true })).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Your caption', exact: true })).toHaveValue('Keep this unfinished joke.');
+  await page.goBack();
+  await expect(page.getByRole('button', { name: 'Browse', exact: true })).toHaveAttribute('aria-pressed', 'true');
 });

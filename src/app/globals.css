@@ -387,3 +387,17 @@ ol.creation-progress { padding: 0; }
   .creation-stage > button[type="button"]:not(.button-primary) { justify-self: start; }
   .round-navigation { position: sticky; bottom: 0; padding: 10px 0; margin-bottom: 0; background: var(--background); z-index: 5; }
 }
+
+.challenge-tabs button {
+  background: transparent;
+  border: 0;
+  padding: .5rem 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.challenge-tabs .workspace-selected {
+  color: var(--accent, #ffe000);
+  text-decoration: underline;
+  text-underline-offset: .4rem;
+}

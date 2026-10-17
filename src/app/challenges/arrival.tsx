@@ -17,7 +17,7 @@ export function ArrivalEmpty({ draft, results = false, yours = false }: { draft?
   return <section className="empty-challenges">
     <h2>{results ? "No finished rounds yet." : yours ? "Make your first challenge." : "No open rounds right now."}</h2>
     <p>{draft ? "Continue a saved matchup or start another while you wait." : "Pit your caption against AI and let the community decide."}</p>
-    <div className="empty-actions"><Link className="button button-primary" href={draft ? `/challenges/${draft.id}` : "/challenges/new"}>{draft ? "Resume your draft" : "Start a challenge"}</Link>{draft && <Link className="button" href="/challenges/new">Start another</Link>}</div>
+    <div className="empty-actions"><Link className="button button-primary" href={draft ? `/challenges/${draft.id}` : "/challenges?mode=create"}>{draft ? "Resume your draft" : "Start a challenge"}</Link>{draft && <Link className="button" href="/challenges?mode=create">Start another</Link>}</div>
   </section>;
 }
 

@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import ChallengesPage from "./challenges/page";
 
+export const maxDuration = 120;
+
 type Search = Record<string, string | string[] | undefined>;
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<Search> }) {
