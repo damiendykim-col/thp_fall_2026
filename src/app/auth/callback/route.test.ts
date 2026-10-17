@@ -52,3 +52,9 @@ it('shows a recoverable error when the callback cannot persist cookies', async (
   expect(log).toHaveBeenCalledWith({ event: 'app-operation', operation: 'auth.callback', outcome: 'failed' });
   log.mockRestore();
 });
+it('passes the callback flow ID to the SDK to select the matching verifier', async () => {
+  const exchange = jest.fn().mockResolvedValue({ data: {}, error: { code: 'expired' } });
+  createClient.mockResolvedValue({ auth: { exchangeCodeForSession: exchange } } as never);
+  await GET(new Request('https://example.com/auth/callback?code=abc&sb_flow_id=flow123456'));
+  expect(exchange).toHaveBeenCalledWith('abc', { flowId: 'flow123456' });
+});

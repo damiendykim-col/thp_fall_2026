@@ -18,3 +18,7 @@ test("ordinary home visits render challenges", async () => {
   await HomePage({searchParams:Promise.resolve({})});
   expect(go).not.toHaveBeenCalled();
 });
+test("root fallback preserves the PKCE flow ID", async () => {
+  await expect(HomePage({ searchParams: Promise.resolve({ code: "abc", sb_flow_id: "flow123456" }) })).rejects.toThrow("redirect");
+  expect(go).toHaveBeenCalledWith("/auth/callback?code=abc&sb_flow_id=flow123456");
+});

@@ -4,6 +4,13 @@ import { measureOperation } from "@/lib/performance";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
+  // The callback owns the new session exchange. Refreshing a stale session
+  // first can clear pending PKCE cookies before it gets to read them.
+  if (request.nextUrl.pathname === '/auth/callback' ||
+    (request.nextUrl.pathname === '/' && (request.nextUrl.searchParams.has('code') || request.nextUrl.searchParams.has('error')))) {
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
+  }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return response;

@@ -14,7 +14,11 @@ export async function GET(request: Request) {
   if (code && !url.searchParams.has("error")) {
     try {
       const supabase = await createAuthClient({ writableCookies: true });
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      const flowId = url.searchParams.get('sb_flow_id');
+      // Let the SDK validate the identifier and select only that flow's verifier.
+      const { data, error } = flowId !== null
+        ? await supabase.auth.exchangeCodeForSession(code, { flowId })
+        : await supabase.auth.exchangeCodeForSession(code);
       if (!error && data.user) {
         logOperation("auth.exchange", "succeeded");
         jar.delete("auth-return");

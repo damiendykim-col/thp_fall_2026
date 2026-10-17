@@ -13,6 +13,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   if (code || error) {
     const callback = new URLSearchParams();
     if (code) callback.set("code", code);
+    if (code && typeof params.sb_flow_id === 'string') callback.set('sb_flow_id', params.sb_flow_id);
     if (error) callback.set("error", error);
     redirect(`/auth/callback?${callback}`);
   }
