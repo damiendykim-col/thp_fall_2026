@@ -21,7 +21,7 @@ export default async function ChallengesPage({ searchParams }: { searchParams: P
   const selected = view === 'results' || view === 'finished' ? 'results' : view === 'yours' && user ? 'yours' : 'open';
   const tabs = [{ value: 'open', label: 'Open' }, { value: 'results', label: 'Results' }, ...(user ? [{ value: 'yours', label: 'Yours' }] : [])];
   const activityPromise = user && selected === 'open'
-    ? getReturnVisits(supabase, user.id).catch(() => ({ draft: null, recent: [], error: true }))
+    ? getReturnVisits(supabase, user.id).catch(() => ({ draft: null, error: true }))
     : null;
   let activity: ReturnData | null = null;
   let content;

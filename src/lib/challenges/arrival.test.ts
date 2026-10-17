@@ -7,27 +7,19 @@ function query(result: object) {
   for (const value of Object.values(chain)) if (jest.isMockFunction(value)) value.mockReturnValue(chain);
   return chain;
 }
-test("return summaries merge and deduplicate the user's most recent owned and voted rounds", async () => {
-  const older = { id: "older", closes_at: "2026-01-01", joke_context: null };
-  const newest = { id: "newest", closes_at: "2026-10-01", joke_context: null };
+test("return visits fetch only the viewer's active drafts", async () => {
   const drafts = query({ data: [{ id: "draft", status: "ready" }], error: null });
-  const own = query({ data: [older, newest], error: null });
-  const votes = query({ data: [{ round: newest }], error: null });
-  const from = jest.fn().mockReturnValueOnce(drafts).mockReturnValueOnce(own).mockReturnValueOnce(votes);
+  const from = jest.fn().mockReturnValue(drafts);
   const data = await getReturnVisits({ from } as unknown as SupabaseClient, "viewer");
-  expect(data).toEqual({ drafts: [{ id: "draft", status: "ready" }], draft: { id: "draft", status: "ready" }, recent: [newest, older], error: false });
+  expect(data).toEqual({ drafts: [{ id: "draft", status: "ready" }], draft: { id: "draft", status: "ready" }, error: false });
+  expect(from).toHaveBeenCalledTimes(1);
   expect(drafts.eq).toHaveBeenCalledWith("creator_id", "viewer");
-  expect(votes.eq).toHaveBeenCalledWith("user_id", "viewer");
-  expect(votes.is).toHaveBeenCalledWith("round.hidden_at", null);
-  expect(votes.limit).toHaveBeenCalledWith(3);
+  expect(drafts.limit).toHaveBeenCalledWith(3);
 });
-test("activity errors remain explicit while successfully loaded information is kept", async () => {
-  const from = jest.fn().mockReturnValueOnce(query({ data: [{ id: "d", status: "draft" }], error: null }))
-    .mockReturnValue(query({ data: null, error: { message: "offline" } }));
+test("draft load failures remain explicit", async () => {
+  const from = jest.fn().mockReturnValue(query({ data: null, error: { message: "offline" } }));
   const data = await getReturnVisits({ from } as unknown as SupabaseClient, "viewer");
-  expect(data.error).toBe(true);
-  expect(data.draft?.id).toBe("d");
-  expect(data.recent).toEqual([]);
+  expect(data).toEqual({ drafts: [], draft: null, error: true });
 });
 test.each([undefined, "0", "-1", "1.5", "NaN", "10001"])("invalid result page %s resets to page 1", value => {
   expect(resultsPage(value)).toBe(1);

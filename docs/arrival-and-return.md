@@ -15,12 +15,11 @@ Updated October 16, 2026.
   their own rounds. The reveal shows authorship and the visitor’s practice pick,
   with no fabricated community totals or winner.
 - An empty signed-in Open feed offers the latest saved draft to resume, or a new
-  challenge to start. A collapsible, explicitly labeled example remains available.
+  challenge to start. Practice is reserved for the signed-out walkthrough.
   Empty Results no longer sends people around an Open/Results loop.
-- Open shows compact links to resume the three most recent saved drafts and visit Results when recent personal
-  results exist. Individual result summaries stay on Results, keeping challenges
-  above the fold. These are not unread/new notifications. Undoing a vote removes
-  that association; there is no invented voting history.
+- Open shows compact links to resume the three most recent saved drafts. Results
+  are accessed through the Results tab, without a duplicate activity shortcut.
+  No activity panel is rendered when there are no saved drafts or loading errors.
 - Signed-in members see a compact heading and Challenge AI action. The signed-out
   practice round offers two predefined images and matching prepared captions; it makes
   no provider requests and records no votes.
@@ -62,9 +61,7 @@ Updated October 16, 2026.
 
 All reads use the signed-in Supabase client and existing RLS; no service key,
 permission change, schema migration, AI request, or shared personalized cache is
-introduced. Activity reads run in parallel with feed loading. Each of the three
-activity queries is bounded: three drafts, three owned results, three voted results;
-the latter two are deduplicated and reduced to the most recent three.
+introduced. Activity reads run in parallel with feed loading. The activity query is bounded to three drafts; owned/voted result queries are no longer needed on Open.
 
 Results reuses `read_caption_challenge` to preserve its database-time disclosure
 check and hidden-content handling. Each page reads up to 13 IDs (one lookahead),
@@ -80,10 +77,10 @@ winner-only app component and loader were removed.
 
 ## Verification
 
-Component/data tests cover empty actions, recent labels, caught-up/own-only states,
+Component/data tests cover empty actions, draft reminders, caught-up/own-only states,
 all result outcomes, query bounds, invalid page parameters, and failed reads.
-Local browser tests cover a new account, example non-mutation, resuming a draft,
-voting/undo, personal result relevance, hidden exclusions, all outcomes, pagination,
+Local browser tests cover a new account, guest practice, resuming a draft,
+voting/undo, Results navigation, hidden exclusions, all outcomes, pagination,
 and mobile overflow. Existing authentication, moderation, GIF and editing scenarios
 remain regression requirements.
 

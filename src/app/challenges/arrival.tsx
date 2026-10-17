@@ -1,24 +1,23 @@
 import Link from "next/link";
 import type { ReturnData, SavedDraft, ResultRound } from "@/lib/challenges/arrival";
-import ChallengeDemo from "./demo";
 
-export function ReturnVisits({ draft, drafts, recent, error }: ReturnData) {
+export function ReturnVisits({ draft, drafts, error }: ReturnData) {
+  const savedDrafts = drafts ?? (draft ? [draft] : []);
+  if (!savedDrafts.length && !error) return null;
   return <aside className="return-visits" aria-label="Pick up where you left off">
-    {(drafts ?? (draft ? [draft] : [])).map((item, index) => <Link key={item.id} href={`/challenges/${item.id}`}>
+    {savedDrafts.map((item, index) => <Link key={item.id} href={`/challenges/${item.id}`}>
       {index === 0 ? 'Resume your draft' : `Draft ${index + 1}`} · {item.status === 'ready' ? 'Review & publish' : item.status === 'generating' ? 'Check progress' : item.status === 'failed' ? 'Retry generation' : 'Continue'} →
     </Link>)}
     {draft && <Link href="/challenges?view=yours">All your drafts & rounds →</Link>}
-    {recent.length > 0 && <Link href="/challenges?view=results">Recent results →</Link>}
-    {error && <p role="alert">Some of your recent activity couldn’t be loaded. You can still browse challenges or open Yours.</p>}
+    {error && <p role="alert">Your saved drafts couldn’t be loaded. You can still browse challenges or open Yours.</p>}
   </aside>;
 }
 
 export function ArrivalEmpty({ draft, results = false, yours = false }: { draft?: SavedDraft | null; results?: boolean; yours?: boolean }) {
   return <section className="empty-challenges">
     <h2>{results ? "No finished rounds yet." : yours ? "Make your first challenge." : "No open rounds right now."}</h2>
-    <p>{draft ? "Continue a saved matchup or start another while you wait." : "Start a round with your own caption, or try the example to see how voting works."}</p>
+    <p>{draft ? "Continue a saved matchup or start another while you wait." : "Pit your caption against AI and let the community decide."}</p>
     <div className="empty-actions"><Link className="button button-primary" href={draft ? `/challenges/${draft.id}` : "/challenges/new"}>{draft ? "Resume your draft" : "Start a challenge"}</Link>{draft && <Link className="button" href="/challenges/new">Start another</Link>}</div>
-    <details className="empty-example"><summary>Try an example · no votes recorded</summary><ChallengeDemo signedIn /></details>
   </section>;
 }
 

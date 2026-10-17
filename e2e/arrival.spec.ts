@@ -1,6 +1,6 @@
 import { test, expect, login } from "./fixtures";
 
-test("a new account has an example, and a saved draft becomes a return action", async ({ page, accounts }) => {
+test("a new account has one creation action, and a saved draft becomes a return action", async ({ page, accounts }) => {
   const owner = await accounts.create();
   const { data: templates } = await accounts.admin.from("images").select("id,image_url").limit(1);
   const template = { template_id: templates![0].id, template_url: templates![0].image_url };
@@ -9,11 +9,8 @@ test("a new account has an example, and a saved draft becomes a return action", 
   await expect(page.getByRole("heading", { name: "No open rounds right now." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Start a challenge", exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Explore results" })).toHaveCount(0);
-  await page.getByText("Try an example · no votes recorded", { exact: true }).click();
-  const demo = page.getByRole("region", { name: "Practice challenge" });
-  await demo.getByRole("button", { name: "Use this image" }).click();
-  await expect(demo.getByRole("status")).toContainText("Step 2");
-  expect((await owner.client.from("challenge_votes").select("*")).data).toEqual([]);
+  await expect(page.getByText("Try an example · no votes recorded", { exact: true })).toHaveCount(0);
+  await expect(page.locator('a[href="/challenges/new"]')).toHaveCount(1);
   const { data: draft, error } = await accounts.admin.from("challenges").insert({ ...template, creator_id: owner.id, situation: "My unfinished scene", status: "draft" }).select("id").single();
   expect(error).toBeNull();
   await page.reload();
@@ -27,7 +24,7 @@ test("a new account has an example, and a saved draft becomes a return action", 
   await expect(page.getByRole("link", { name: "Browse challenges" })).toHaveCount(0);
 });
 
-test("voting catches up without removing cards; closing surfaces only personal results and every outcome", async ({ page, accounts }, testInfo) => {
+test("voting catches up without removing cards; results show every outcome after closing", async ({ page, accounts }, testInfo) => {
   const owner = await accounts.create();
   const { data: templates } = await accounts.admin.from("images").select("id,image_url").limit(1);
   const template = { template_id: templates![0].id, template_url: templates![0].image_url };
@@ -59,13 +56,8 @@ test("voting catches up without removing cards; closing surfaces only personal r
   await expect(page.getByRole("button", { name: "Undo upvote" })).toBeEnabled();
   expect((await accounts.admin.from("challenges").update({ closes_at: "2026-01-01T00:00:00Z" }).in("id", [ids.human, ids.tie])).error).toBeNull();
   await page.goto("/");
-  const activity = page.getByRole("complementary", { name: "Pick up where you left off" });
-  await expect(activity.getByRole("link", { name: "Recent results →" })).toBeVisible();
-  await expect(activity.getByRole("link")).toHaveCount(1);
-  await expect(activity.getByRole("alert")).toHaveCount(0);
-  await expect(activity.locator(`a[href="/challenges/${ids.hidden}"]`)).toHaveCount(0);
-  await expect(activity.locator(`a[href="/challenges/${ids.unrelated}"]`)).toHaveCount(0);
-  await page.goto("/challenges?view=results");
+  await expect(page.getByRole("link", { name: "Recent results →" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Results", exact: true }).click();
   await expect(page.getByRole("heading", { name: /(?:Human|AI) caption wins/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "It’s a tie" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No votes this round" })).toHaveCount(2);

@@ -2,29 +2,16 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Challenge } from "./types";
 
-export type RecentRound = { id: string; closes_at: string; joke_context: string | null };
 export type SavedDraft = { id: string; status: string };
-export type ReturnData = { draft: SavedDraft | null; drafts?: SavedDraft[]; recent: RecentRound[]; error: boolean };
+export type ReturnData = { draft: SavedDraft | null; drafts?: SavedDraft[]; error: boolean };
 export type ResultRound = Challenge & { imageUrl: string | null };
 
 // All queries use the viewer's client/RLS, never a service key or shared cache.
 export async function getReturnVisits(client: SupabaseClient, userId: string): Promise<ReturnData> {
-  const now = new Date().toISOString();
-  const fields = "id,closes_at,joke_context";
-  const [drafts, own, voted] = await Promise.all([
-    client.from("challenges").select("id,status").eq("creator_id", userId).is("hidden_at", null)
-      .is("published_at", null).in("status", ["draft", "ready", "failed", "generating"])
-      .order("created_at", { ascending: false }).limit(3),
-    client.from("challenges").select(fields).eq("creator_id", userId).eq("status", "published")
-      .is("hidden_at", null).lte("closes_at", now).order("closes_at", { ascending: false }).limit(3),
-    client.from("challenge_votes").select(`round:challenges!inner(${fields})`).eq("user_id", userId)
-      .eq("round.status", "published").is("round.hidden_at", null).lte("round.closes_at", now)
-      .order("round(closes_at)", { ascending: false }).limit(3),
-  ]);
-  const votedRounds = (voted.error ? [] : voted.data ?? []).flatMap(row => row.round) as unknown as RecentRound[];
-  const recent = [...new Map([...(own.error ? [] : own.data ?? []), ...votedRounds].map(row => [row.id, row as RecentRound])).values()]
-    .sort((a, b) => b.closes_at.localeCompare(a.closes_at)).slice(0, 3);
-  return { drafts: drafts.error ? [] : drafts.data ?? [], draft: drafts.error ? null : drafts.data?.[0] ?? null, recent, error: Boolean(drafts.error || own.error || voted.error) };
+  const drafts = await client.from("challenges").select("id,status").eq("creator_id", userId).is("hidden_at", null)
+    .is("published_at", null).in("status", ["draft", "ready", "failed", "generating"])
+    .order("created_at", { ascending: false }).limit(3);
+  return { drafts: drafts.error ? [] : drafts.data ?? [], draft: drafts.error ? null : drafts.data?.[0] ?? null, error: Boolean(drafts.error) };
 }
 
 export const RESULTS_PAGE_SIZE = 12;

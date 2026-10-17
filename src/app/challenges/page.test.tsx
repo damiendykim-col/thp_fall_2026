@@ -4,7 +4,7 @@ import { createAuthClient } from "@/lib/supabase/server";
 
 jest.mock("@/lib/supabase/server", () => ({ createAuthClient: jest.fn() }));
 jest.mock("@/components/site-header", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/lib/challenges/arrival", () => ({ getReturnVisits: jest.fn(async () => ({ draft: null, recent: [], error: false })), resultsPage: () => 1 }));
+jest.mock("@/lib/challenges/arrival", () => ({ getReturnVisits: jest.fn(async () => ({ draft: null, error: false })), resultsPage: () => 1 }));
 
 const rows = [
   { id: "own", creator_id: "viewer" },
